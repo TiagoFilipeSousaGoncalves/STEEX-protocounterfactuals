@@ -16,21 +16,12 @@ class Args:
     checkpoints_dir = "/path/to/checkopints/dir"
     data_dir = "/path/to/data/dir"
 
-    ##################
-    # FOR CELEBAMASK-HQ
-    decision_model_name = 'decision_model_celebamhq'
-    image_path_train = os.path.join(data_dir, "train", "images")
-    image_path_val = os.path.join(data_dir, "test", "images")
-    attributes_path = os.path.join(data_dir, "CelebAMask-HQ-attribute-anno.txt")
-    load_size = (256, 256)
-
-    ## FOR CELEBA
-    #decision_model_name = 'decision_model_celeba'
-    #image_path_train = os.path.join(data_dir, "img_squared128_celeba_train")
-    #image_path_val = os.path.join(data_dir, "img_squared128_celeba_test")
-    #attributes_path = os.path.join(data_dir, "list_attr_celeba.txt")
-    #load_size = (128, 128)
-    ###################
+    # FOR CELEBA
+    decision_model_name = 'decision_model_celeba'
+    image_path_train = os.path.join(data_dir, "img_squared128_celeba_train")
+    image_path_val = os.path.join(data_dir, "img_squared128_celeba_test")
+    attributes_path = os.path.join(data_dir, "list_attr_celeba.txt")
+    load_size = (128, 128)
 
     train_attributes_idx = [20, 31, 39] # Male, Smile, Young
     batch_size = 32
