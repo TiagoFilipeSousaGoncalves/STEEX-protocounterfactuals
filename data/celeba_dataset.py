@@ -1,5 +1,6 @@
 # Imports
 import os
+import pandas as pd
 from PIL import Image
 
 # PyTorch Imports
@@ -13,7 +14,7 @@ class CelebaDB(torch.utils.data.Dataset):
     def __init__(self, images_dir='Img', images_subdir='img_align_celeba', eval_dir='Eval', anno_dir="Anno", subset='train', load_size=(256, 256), augment=False):
         super(CelebaDB, self).__init__()
 
-        assert images_subdir in ('img_celeba', 'img_align_celeba')
+        assert images_subdir in ('img_celeba', 'img_align_celeba', 'img_align_squared128_celeba')
         assert subset in ('train', 'val', 'test')
 
         # Add variables to class variables
