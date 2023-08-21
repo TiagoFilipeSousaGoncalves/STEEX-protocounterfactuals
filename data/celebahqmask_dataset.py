@@ -36,16 +36,18 @@ class CelebaMaskHQDB(torch.utils.data.Dataset):
             images_subset = test_set
 
         # Attributes
+        images_subset_ = list()
         attributes_subset = dict()
         for image_fname in images_subset:
             if image_fname in celebamaskhq_attributes.keys():
                 attributes_subset[image_fname] = celebamaskhq_attributes[image_fname]
+                images_subset_.append(image_fname)
 
-        assert len(attributes_subset) == len(images_subset)
+        assert len(attributes_subset) == len(images_subset_)
         
 
         # Assign class variables
-        self.images = images_subset
+        self.images = images_subset_
         self.attributes = attributes_subset
         self.attributes_names = celebamaskhq_attributes_columns
         self.subset = subset
