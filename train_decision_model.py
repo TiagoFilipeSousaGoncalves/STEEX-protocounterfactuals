@@ -9,22 +9,23 @@ import torch
 import torch.nn as nn
 
 # Project Imports
-# from data.faceattribute_dataset import FaceAttributesDataset
 from data.celeba_dataset import CelebaDB
+from data.celebahqmask_dataset import CelebaMaskHQDB
 from models.DecisionDensenetModel import DecisionDensenetModel
 
 
 
 # Create CLI
-parser = argparse.ArgumentParser(description="Train the decision model for CelebA database.")
+parser = argparse.ArgumentParser(description="Train the decision model for CelebA, CelebaMaskHQDB databases.")
 
 # CLI Arguments
+parser.add_argument('--dataset_name', type=str, required=True, choices=['CelebaDB', 'CelebaMaskHQDB'], help="The name of the database.")
 parser.add_argument('--results_dir', type=str, required=True, help="The results directory.")
 parser.add_argument('--images_dir', type=str, required=True, help="The images directory.")
-parser.add_argument('--images_subdir', type=str, required=True, choices=['img_align_celeba', 'img_align_celeba_png', 'img_align_squared128_celeba', 'img_celeba'], help="The images subdirectory.")
+parser.add_argument('--images_subdir', type=str, choices=['img_align_celeba', 'img_align_celeba_png', 'img_align_squared128_celeba', 'img_celeba'], help="The images subdirectory.")
 parser.add_argument('--eval_dir', type=str, required=True, help="The dataset partition directory.")
 parser.add_argument('--anno_dir', type=str, required=True, help="The dataset annotations directory.")
-parser.add_argument('--decision_model_name', type=str, choices=['decision_model_celeba'], required=True, help="The name of the decision model.")
+parser.add_argument('--decision_model_name', type=str, choices=['decision_model_celeba', 'decision_model_celebamaskhq'], required=True, help="The name of the decision model.")
 parser.add_argument('--load_size', type=int, nargs='+', required=True, help="The size (height, width) to load the images.")
 parser.add_argument('--train_attributes_idx', type=int, nargs='+', required=True, help="The indices of the train attributes.")
 parser.add_argument('--batch_size', type=int, required=True, help="The batch size to load the data.")
@@ -39,58 +40,56 @@ opt = parser.parse_args()
 
 
 
-"""
-class Args:
+# Load dataset (and subsets)
+# CelebaDB
+if opt.dataset_name == 'CelebaDB':
 
-    checkpoints_dir = "/path/to/checkopints/dir"
-    data_dir = "/path/to/data/dir"
+    assert opt.images_subdir is not None
 
-    # FOR CELEBA
-    decision_model_name = 'decision_model_celeba'
-    image_path_train = os.path.join(data_dir, "img_squared128_celeba_train")
-    image_path_val = os.path.join(data_dir, "img_squared128_celeba_test")
-    attributes_path = os.path.join(data_dir, "list_attr_celeba.txt")
-    load_size = (128, 128)
+    # Train
+    data_train = CelebaDB(
+        images_dir=opt.images_dir,
+        images_subdir=opt.images_subdir,
+        eval_dir=opt.eval_dir,
+        anno_dir=opt.anno_dir,
+        subset='train',
+        load_size=tuple(opt.load_size)
+    )
 
-    train_attributes_idx = [20, 31, 39] # Male, Smile, Young
-    batch_size = 32
-    optimizer = 'adam'
-    lr = 0.0001
-    step_size = 10
-    gamma_scheduler = 0.5
+    # Validation
+    data_val = CelebaDB(
+        images_dir=opt.images_dir,
+        images_subdir=opt.images_subdir,
+        eval_dir=opt.eval_dir,
+        anno_dir=opt.anno_dir,
+        subset='val',
+        load_size=tuple(opt.load_size)
+    )
 
-    num_epochs = 5
+# CelebaMaskHQDB
+elif opt.dataset_name == 'CelebaMaskHQDB':
 
-opt=Args()
-"""
+    # Train
+    data_train = CelebaMaskHQDB(
+        images_dir=opt.images_dir,
+        eval_dir=opt.eval_dir,
+        anno_dir=opt.anno_dir,
+        subset='train',
+        load_size=tuple(opt.load_size),
+    )
+
+    # Validation
+    data_val = CelebaMaskHQDB(
+        images_dir=opt.images_dir,
+        eval_dir=opt.eval_dir,
+        anno_dir=opt.anno_dir,
+        subset='val',
+        load_size=tuple(opt.load_size),
+    )
 
 
-
-# Load data
-# data_train = FaceAttributesDataset(image_path=opt.image_path_train, attributes_path=opt.attributes_path, load_size=opt.load_size)
-# data_val = FaceAttributesDataset(image_path=opt.image_path_val, attributes_path=opt.attributes_path, load_size=opt.load_size)
-
-# Train
-data_train = CelebaDB(
-    images_dir=opt.images_dir,
-    images_subdir=opt.images_subdir,
-    eval_dir=opt.eval_dir,
-    anno_dir=opt.anno_dir,
-    subset='train',
-    load_size=tuple(opt.load_size)
-)
+# Create dataloaders
 dataloader_train = torch.utils.data.DataLoader(data_train, batch_size=opt.batch_size, shuffle=True, num_workers=4)
-
-
-# Validation
-data_val = CelebaDB(
-    images_dir=opt.images_dir,
-    images_subdir=opt.images_subdir,
-    eval_dir=opt.eval_dir,
-    anno_dir=opt.anno_dir,
-    subset='val',
-    load_size=tuple(opt.load_size)
-)
 dataloader_val = torch.utils.data.DataLoader(data_val, batch_size=opt.batch_size, shuffle=False, num_workers=4)
 
 
