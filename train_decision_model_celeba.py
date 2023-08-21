@@ -187,9 +187,9 @@ def evaluate_one_epoch():
 
         batch_interval = 50
         if (batch_idx+1) % batch_interval == 0:
-            log_string(' ---- batch: %03d ----' % (batch_idx+1))
-            log_string('mean loss on the last 50 batches: %f'%(stat_loss/batch_interval))
-            log_string('mean accuracy on the last 50 batches: ' + str(stat_acc/batch_interval))
+            print(' ---- batch: %03d ----' % (batch_idx+1))
+            print('mean loss on the last 50 batches: %f'%(stat_loss/batch_interval))
+            print('mean accuracy on the last 50 batches: ' + str(stat_acc/batch_interval))
             stat_loss = 0
             stat_acc = 0
 
@@ -197,8 +197,8 @@ def evaluate_one_epoch():
     total_mean_loss = total_loss/len(dataloader_val)
     total_mean_acc = total_acc/len(dataloader_val)
 
-    log_string('mean loss over validation set: %f'%(total_mean_loss))
-    log_string('mean accuracy over validation set: '+str(total_mean_acc))
+    print('mean loss over validation set: %f'%(total_mean_loss))
+    print('mean accuracy over validation set: '+str(total_mean_acc))
 
     return total_mean_loss
 
