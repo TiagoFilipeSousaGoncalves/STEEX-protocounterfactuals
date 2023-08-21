@@ -26,28 +26,33 @@ class CelebaMaskHQDB(torch.utils.data.Dataset):
         # Load annotations
         celebamaskhq_attributes, celebamaskhq_attributes_columns = self.load_celebamaskhq_attributes()
 
-        # Data splits
+        # Load CelebaMaskHQ to CelebA mapping
+        self.celebahq_to_celeba_mapp = self.load_celebahq_to_celeba_mapp()
+
+        # Read original data splits
         train_set, val_set, test_set = self.load_data_splits()
+
+        # Fix data splits (using the CelebaMaskHQ to CelebA mapping)
+        train_set_f, val_set_f, test_set_f = self.fix_data_splits(train_set, val_set, test_set)
+
         if subset == 'train':
-            images_subset = train_set
+            images_subset = train_set_f
         elif subset == 'val':
-            images_subset = val_set
+            images_subset = val_set_f
         else:
-            images_subset = test_set
+            images_subset = test_set_f
 
         # Attributes
-        images_subset_ = list()
         attributes_subset = dict()
         for image_fname in images_subset:
             if image_fname in celebamaskhq_attributes.keys():
                 attributes_subset[image_fname] = celebamaskhq_attributes[image_fname]
-                images_subset_.append(image_fname)
 
-        assert len(attributes_subset) == len(images_subset_)
+        assert len(attributes_subset) == len(images_subset)
         
 
         # Assign class variables
-        self.images = images_subset_
+        self.images = images_subset
         self.attributes = attributes_subset
         self.attributes_names = celebamaskhq_attributes_columns
         self.subset = subset
@@ -120,6 +125,62 @@ class CelebaMaskHQDB(torch.utils.data.Dataset):
         assert nr_entries == len(celebamaskhq_attributes)
 
         return celebamaskhq_attributes, column_names
+    
+
+    # Method: Load CelebA-HQ to CelebA mapping
+    def load_celebahq_to_celeba_mapp(self):
+
+        # Build a dictionary
+        celebahq_to_celeba_mapp = dict()
+
+        # Read celebahq_to_celeba_mapp file
+        celebahq_to_celeba_mapp_txt = os.path.join(self.anno_dir, "CelebA-HQ-to-CelebA-mapping.txt")
+
+        # Open file contents
+        with open(celebahq_to_celeba_mapp_txt, 'r') as f:
+            for line_idx, line in enumerate(f.readlines()):
+                
+                # Serialise line
+                # print(line)
+                line_ser = line.strip().split()
+                # print(line_ser)
+
+                if line_idx == 0:
+                    orig_idx = line_ser[1]
+                    orig_file = line_ser[2]
+                else:
+                    idx = line_ser[0]
+                    if idx not in celebahq_to_celeba_mapp.keys():
+                        celebahq_to_celeba_mapp[idx] = {orig_idx:line_ser[1], orig_file:line_ser[2]}
+        # print(celebahq_to_celeba_mapp)
+
+        return celebahq_to_celeba_mapp
+    
+
+    # Method: Fix data splits
+    def fix_data_splits(self, train_set, val_set, test_set):
+
+        # Generate lists for fixed partitions
+        train_set_f, val_set_f, test_set_f = list(), list(), list()
+
+        # Go through the CelebA-HQ to CelebA mapping
+        for img_idx, img_mapp in self.celebahq_to_celeba_mapp.items():
+
+            # Create image filename
+            img_fname = f'{img_idx}.jpg'
+
+            # Get original index and original fname
+            _, img_orig_fname = img_mapp['orig_idx'], img_mapp['orig_file']
+
+            # From the original fnames, let's map the current images
+            if img_orig_fname in train_set:
+                train_set_f.append(img_fname)
+            elif img_orig_fname in val_set:
+                val_set_f.append(img_fname)
+            elif img_orig_fname in test_set:
+                test_set_f.append(img_fname)
+
+        return train_set_f, val_set_f, test_set_f
 
 
     # Method: Transforms
