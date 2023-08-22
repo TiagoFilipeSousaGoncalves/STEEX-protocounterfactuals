@@ -9,10 +9,10 @@ from torchvision import transforms
 
 
 
-# Class: BDDOIADB
-class BDD100kDB(torch.utils.data.Dataset):
+# Class: BDD10kDB
+class BDD10kDB(torch.utils.data.Dataset):
     def __init__(self, images_dir='images', labels_dir='labels', subset='train', load_size=512, crop_size=512, label_nc=19, contain_dontcare_label=True, semantic_nc=18, cache_filelist_read=False, cache_filelist_write=False, aspect_ratio=2.0, augment=False):
-        super(BDD100kDB, self).__init__()
+        super(BDD10kDB, self).__init__()
 
         assert subset in ('train', 'val', 'test')
 
@@ -31,16 +31,16 @@ class BDD100kDB(torch.utils.data.Dataset):
 
 
         # Load 100k data
-        bdd100k_train_images, bdd_100k_val_images, bdd_100k_test_images = self.load_bdd_100k_images()
+        bdd10k_train_images, bdd10k_val_images, bdd10k_test_images = self.load_bdd_10k_images()
 
         # Load semantic segmentation data
-        bdd100k_semseg_train_masks, bdd100k_semseg_val_masks = self.load_semseg_labels()
+        bdd10k_semseg_train_masks, bdd10k_semseg_val_masks = self.load_semseg_labels()
 
         # Get the right data splits
         if subset == 'train':
-            images, masks =  self.get_data_splits(bdd100k_train_images, bdd100k_semseg_train_masks)
+            images, masks =  self.get_data_splits(bdd10k_train_images, bdd10k_semseg_train_masks)
         elif subset == 'val':
-            images, masks = self.get_data_splits(bdd_100k_val_images, bdd100k_semseg_val_masks)
+            images, masks = self.get_data_splits(bdd10k_val_images, bdd10k_semseg_val_masks)
         else:
             pass
 
@@ -54,14 +54,14 @@ class BDD100kDB(torch.utils.data.Dataset):
     
 
     # Method: Load 100k images
-    def load_bdd_100k_images(self):
+    def load_bdd_10k_images(self):
         
         # Read images
-        bdd_100k_train = [i for i in os.listdir(os.path.join(self.images_dir, "100k", "train")) if not i.startswith('.')]
-        bdd_100k_val = [i for i in os.listdir(os.path.join(self.images_dir, "100k", "val")) if not i.startswith('.')]
-        bdd_100k_test = [i for i in os.listdir(os.path.join(self.images_dir, "100k", "test")) if not i.startswith('.')]
+        bdd_10k_train = [i for i in os.listdir(os.path.join(self.images_dir, "10k", "train")) if not i.startswith('.')]
+        bdd_10k_val = [i for i in os.listdir(os.path.join(self.images_dir, "10k", "val")) if not i.startswith('.')]
+        bdd_10k_test = [i for i in os.listdir(os.path.join(self.images_dir, "10k", "test")) if not i.startswith('.')]
         
-        return bdd_100k_train, bdd_100k_val, bdd_100k_test
+        return bdd_10k_train, bdd_10k_val, bdd_10k_test
 
 
     # Method: Load Semantic Segmentation labels
@@ -133,10 +133,10 @@ class BDD100kDB(torch.utils.data.Dataset):
 
         # Get paths
         if self.subset == 'train':
-            image_path = os.path.join(self.images_dir, "100k", "train")
+            image_path = os.path.join(self.images_dir, "10k", "train")
             mask_path = os.path.join(self.labels_dir, "sem_seg", "masks", "train")
         elif self.subset == 'val':
-            image_path = os.path.join(self.images_dir, "100k", "val")
+            image_path = os.path.join(self.images_dir, "10k", "val")
             mask_path = os.path.join(self.labels_dir, "sem_seg", "masks", "val")
         else:
             pass

@@ -9,22 +9,22 @@ import torch.nn as nn
 import torchvision
 
 # Project Imports
-from data_seg_utilities import BDD100kDB
+from data_seg_utilities import BDD10kDB
 from train_val_test_seg_utilities import train_one_epoch, evaluate_one_epoch
 
 
 
 # Create CLI
-parser = argparse.ArgumentParser(description="Train the segmentation model for CelebaMaskHQDB, BDD100kDB databases.")
+parser = argparse.ArgumentParser(description="Train the segmentation model for CelebaMaskHQDB, BDD10kDB databases.")
 
 # CLI Arguments
-parser.add_argument('--dataset_name', type=str, required=True, choices=['CelebaMaskHQDB', 'BDD100kDB'], help="The name of the database.")
+parser.add_argument('--dataset_name', type=str, required=True, choices=['CelebaMaskHQDB', 'BDD10kDB'], help="The name of the database.")
 parser.add_argument('--results_dir', type=str, required=True, help="The results directory.")
-parser.add_argument('--images_dir', type=str, help="Images directory (for BDD100kDB).")
-parser.add_argument('--labels_dir', type=str, help="Labels directory (for BDD100kDB).")
+parser.add_argument('--images_dir', type=str, help="Images directory (for BDD10kDB).")
+parser.add_argument('--labels_dir', type=str, help="Labels directory (for BDD10kDB).")
 parser.add_argument('--n_classes', type=int, required=True, choices=[19, 20], help="Number of segmentation classes.")
 parser.add_argument('--pretrained', action='store_true', help="Initialize segmentation model with pretrained weights.")
-parser.add_argument('--segmentation_network_name', type=str, required=True, choices=['deeplabv3_bdd100k', 'deeplabv3_celebamaskhq'], help="The name for the segmentation network.")
+parser.add_argument('--segmentation_network_name', type=str, required=True, choices=['deeplabv3_bdd10k', 'deeplabv3_celebamaskhq'], help="The name for the segmentation network.")
 parser.add_argument('--seed', type=int, default=42, required=True, help="Seed for random purposes (to ensure reproducibility).")
 parser.add_argument('--batch_size', type=int, default=8, required=True, help="Batch size for the dataloaders.")
 parser.add_argument('--num_epochs', type=int, default=50, required=True, help="Number of training epochs.")
@@ -44,11 +44,11 @@ else:
 
     assert opt.images_dir is not None
     assert opt.labels_dir is not None
-    assert opt.segmentation_network_name == 'deeplabv3_bdd100k'
+    assert opt.segmentation_network_name == 'deeplabv3_bdd10k'
     assert opt.n_classes == 20
 
     # Train
-    dataset_train = BDD100kDB(
+    dataset_train = BDD10kDB(
         images_dir=opt.images_dir,
         labels_dir=opt.labels_dir,
         subset='train',
@@ -64,7 +64,7 @@ else:
     )
 
     # Validation
-    dataset_val = BDD100kDB(
+    dataset_val = BDD10kDB(
         images_dir=opt.images_dir,
         labels_dir=opt.labels_dir,
         subset='val',
