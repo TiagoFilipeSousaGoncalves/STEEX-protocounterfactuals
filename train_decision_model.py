@@ -11,22 +11,26 @@ import torch.nn as nn
 # Project Imports
 from data.celeba_dataset import CelebaDB
 from data.celebahqmask_dataset import CelebaMaskHQDB
+from data.bddoia_dataset import BDDOIADB
 from models.DecisionDensenetModel import DecisionDensenetModel
 
 
 
 # Create CLI
-parser = argparse.ArgumentParser(description="Train the decision model for CelebA, CelebaMaskHQDB databases.")
+parser = argparse.ArgumentParser(description="Train the decision model for CelebA, CelebaMaskHQDB, BDDOIADB databases.")
 
 # CLI Arguments
-parser.add_argument('--dataset_name', type=str, required=True, choices=['CelebaDB', 'CelebaMaskHQDB'], help="The name of the database.")
+parser.add_argument('--dataset_name', type=str, required=True, choices=['CelebaDB', 'CelebaMaskHQDB', 'BDDOIADB'], help="The name of the database.")
 parser.add_argument('--results_dir', type=str, required=True, help="The results directory.")
-parser.add_argument('--images_dir', type=str, required=True, help="The images directory.")
-parser.add_argument('--images_subdir', type=str, choices=['img_align_celeba', 'img_align_celeba_png', 'img_align_squared128_celeba', 'img_celeba'], help="The images subdirectory.")
-parser.add_argument('--eval_dir', type=str, required=True, help="The dataset partition directory.")
-parser.add_argument('--anno_dir', type=str, required=True, help="The dataset annotations directory.")
-parser.add_argument('--decision_model_name', type=str, choices=['decision_model_celeba', 'decision_model_celebamaskhq'], required=True, help="The name of the decision model.")
-parser.add_argument('--load_size', type=int, nargs='+', required=True, help="The size (height, width) to load the images.")
+parser.add_argument('--images_dir', type=str, help="The images directory (for CelebaDB, CelebaMaskHQDB).")
+parser.add_argument('--images_subdir', type=str, choices=['img_align_celeba', 'img_align_celeba_png', 'img_align_squared128_celeba', 'img_celeba'], help="The images subdirectory (for CelebaDB).")
+parser.add_argument('--eval_dir', type=str, help="The dataset partition directory (for CelebaDB, CelebaMaskHQDB).")
+parser.add_argument('--anno_dir', type=str, help="The dataset annotations directory (for CelebaDB, CelebaMaskHQDB).")
+parser.add_argument('--data_dir', type=str, help="The dataset data directory (for BDDOIADB).")
+parser.add_argument('--metadata_dir', type=str, help="The dataset metadata directory (for BDDOIADB).")
+parser.add_argument('--crop_size', type=int, nargs='+', help="The crop size (height, width) to load the images (for BDDOIADB).")
+parser.add_argument('--load_size', type=int, nargs='+', help="The size (height, width) to load the images (for CelebaDB, CelebaMaskHQDB).")
+parser.add_argument('--decision_model_name', type=str, choices=['decision_model_celeba', 'decision_model_celebamaskhq', 'decision_model_bddoia'], required=True, help="The name of the decision model.")
 parser.add_argument('--train_attributes_idx', type=int, nargs='+', required=True, help="The indices of the train attributes.")
 parser.add_argument('--batch_size', type=int, required=True, help="The batch size to load the data.")
 parser.add_argument('--optimizer', type=str, required=True, choices=['Adam'], help="The optimization algorithm to update the parameters of the model.")
@@ -44,7 +48,11 @@ opt = parser.parse_args()
 # CelebaDB
 if opt.dataset_name == 'CelebaDB':
 
+    assert opt.images_dir is not None
     assert opt.images_subdir is not None
+    assert opt.eval_dir is not None
+    assert opt.anno_dir is not None
+    assert opt.load_size is not None
 
     # Train
     data_train = CelebaDB(
@@ -69,6 +77,11 @@ if opt.dataset_name == 'CelebaDB':
 # CelebaMaskHQDB
 elif opt.dataset_name == 'CelebaMaskHQDB':
 
+    assert opt.images_dir is not None
+    assert opt.eval_dir is not None
+    assert opt.anno_dir is not None
+    assert opt.load_size is not None
+
     # Train
     data_train = CelebaMaskHQDB(
         images_dir=opt.images_dir,
@@ -87,6 +100,29 @@ elif opt.dataset_name == 'CelebaMaskHQDB':
         load_size=tuple(opt.load_size),
     )
 
+# BDDOIADB
+else:
+
+    assert opt.data_dir is not None
+    assert opt.metadata_dir is not None
+    assert opt.crop_size is not None
+
+    # Train
+    data_train = BDDOIADB(
+        data_dir=opt.data_dir,
+        metadata_dir=opt.metadata_dir,
+        subset='train',
+        crop_size=tuple(opt.crop_size),
+    )
+
+    # Validation
+    data_val = BDDOIADB(
+        data_dir=opt.data_dir,
+        metadata_dir=opt.metadata_dir,
+        subset='val',
+        crop_size=tuple(opt.crop_size)
+    )
+
 
 # Create dataloaders
 dataloader_train = torch.utils.data.DataLoader(data_train, batch_size=opt.batch_size, shuffle=True, num_workers=4)
@@ -94,117 +130,231 @@ dataloader_val = torch.utils.data.DataLoader(data_val, batch_size=opt.batch_size
 
 
 
-# Function: Train one epoch
-def train_one_epoch():
+# Get training and evaluation loops
+if opt.dataset_name in ('CelebaDB', 'CelebaMaskHQDB'):
+    
+    # Function: Train one epoch
+    def train_one_epoch():
 
-    print("Number of batches:", len(dataloader_train))
-    total_loss = 0
-    stat_loss = 0
+        print("Number of batches:", len(dataloader_train))
+        total_loss = 0
+        stat_loss = 0
 
-    total_acc = np.zeros(len(opt.train_attributes_idx))
-    stat_acc = np.zeros(len(opt.train_attributes_idx))
+        total_acc = np.zeros(len(opt.train_attributes_idx))
+        stat_acc = np.zeros(len(opt.train_attributes_idx))
 
-    model.train()
+        model.train()
 
-    for batch_idx, batch_data in enumerate(tqdm(dataloader_train)):
-        batch_data['image'] = batch_data['image'].to(device)
-        batch_data['attributes'] = batch_data['attributes'].to(device)
+        for batch_idx, batch_data in enumerate(tqdm(dataloader_train)):
+            batch_data['image'] = batch_data['image'].to(device)
+            batch_data['attributes'] = batch_data['attributes'].to(device)
 
-        # Forward pass
-        optimizer.zero_grad()
-        inputs = batch_data['image']
+            # Forward pass
+            optimizer.zero_grad()
+            inputs = batch_data['image']
 
-        pred = model(inputs)
-        pred_labels = torch.where(pred > 0.5, 1.0, 0.0)
-        real_labels = torch.index_select(batch_data['attributes'], 1, torch.tensor(opt.train_attributes_idx).to(device))
+            pred = model(inputs)
+            pred_labels = torch.where(pred > 0.5, 1.0, 0.0)
+            real_labels = torch.index_select(batch_data['attributes'], 1, torch.tensor(opt.train_attributes_idx).to(device))
 
-        # Compute loss and gradients
-        loss = criterion(pred, real_labels)
-        acc = compute_accuracy(pred_labels, real_labels)
+            # Compute loss and gradients
+            loss = criterion(pred, real_labels)
+            acc = compute_accuracy(pred_labels, real_labels)
 
-        stat_loss += loss.item()
-        total_loss += loss.item()
-        stat_acc += acc
-        total_acc += acc
+            stat_loss += loss.item()
+            total_loss += loss.item()
+            stat_acc += acc
+            total_acc += acc
 
-        loss.backward()
-        optimizer.step()
-
-
-        batch_interval = 50
-        if (batch_idx+1) % batch_interval == 0:
-            print(' ---- batch: %03d ----' % (batch_idx+1))
-            print('mean loss on the last 50 batches: %f'%(stat_loss/batch_interval))
-            print('mean accuracy on the last 50 batches: '+ str(stat_acc/batch_interval))
-            stat_loss = 0
-            stat_acc = 0
+            loss.backward()
+            optimizer.step()
 
 
-    total_mean_loss = total_loss / len(dataloader_train)
-    total_mean_acc = total_acc / len(dataloader_train)
-    print('mean loss over training set: %f' % (total_mean_loss))
-    print('mean accuracy over training set: ' + str(total_mean_acc))
+            batch_interval = 50
+            if (batch_idx+1) % batch_interval == 0:
+                print(' ---- batch: %03d ----' % (batch_idx+1))
+                print('mean loss on the last 50 batches: %f'%(stat_loss/batch_interval))
+                print('mean accuracy on the last 50 batches: '+ str(stat_acc/batch_interval))
+                stat_loss = 0
+                stat_acc = 0
 
-    return total_mean_loss
+
+        total_mean_loss = total_loss / len(dataloader_train)
+        total_mean_acc = total_acc / len(dataloader_train)
+        print('mean loss over training set: %f' % (total_mean_loss))
+        print('mean accuracy over training set: ' + str(total_mean_acc))
+
+        return total_mean_loss
 
 
+    # Function: Evaluate one epoch
+    def evaluate_one_epoch():
 
-# Function: Evaluate one epoch
-def evaluate_one_epoch():
+        model.eval()
 
-    model.eval()
+        total_loss = 0
+        stat_loss = 0
+        total_acc = np.zeros(len(opt.train_attributes_idx))
+        stat_acc = np.zeros(len(opt.train_attributes_idx))
 
-    total_loss = 0
-    stat_loss = 0
-    total_acc = np.zeros(len(opt.train_attributes_idx))
-    stat_acc = np.zeros(len(opt.train_attributes_idx))
+        print("Number of batches:", len(dataloader_val))
 
-    print("Number of batches:", len(dataloader_val))
+        for batch_idx, batch_data in enumerate(tqdm(dataloader_val)):
+            batch_data['image'] = batch_data['image'].to(device)
+            batch_data['attributes'] = batch_data['attributes'].to(device)
 
-    for batch_idx, batch_data in enumerate(tqdm(dataloader_val)):
-        batch_data['image'] = batch_data['image'].to(device)
-        batch_data['attributes'] = batch_data['attributes'].to(device)
+            # Forward pass
 
-        # Forward pass
+            inputs = batch_data['image']
+            with torch.no_grad():
+                pred = model(inputs)
+                pred_labels = torch.where(pred > 0.5 , 1.0,0.0)
 
-        inputs = batch_data['image']
-        with torch.no_grad():
+                real_labels = torch.index_select(batch_data['attributes'],1,torch.tensor(opt.train_attributes_idx).to(device))
+
+            # Compute loss and metrics
+            loss = criterion(pred,real_labels)
+            acc = compute_accuracy(pred_labels,real_labels)
+
+            stat_loss += loss.item()
+            total_loss += loss.item()
+            stat_acc += acc
+            total_acc += acc
+
+
+            batch_interval = 50
+            if (batch_idx+1) % batch_interval == 0:
+                print(' ---- batch: %03d ----' % (batch_idx+1))
+                print('mean loss on the last 50 batches: %f'%(stat_loss/batch_interval))
+                print('mean accuracy on the last 50 batches: ' + str(stat_acc/batch_interval))
+                stat_loss = 0
+                stat_acc = 0
+
+
+        total_mean_loss = total_loss/len(dataloader_val)
+        total_mean_acc = total_acc/len(dataloader_val)
+
+        print('mean loss over validation set: %f'%(total_mean_loss))
+        print('mean accuracy over validation set: '+str(total_mean_acc))
+
+        return total_mean_loss
+
+else:
+
+    # Function: Train one epoch
+    def train_one_epoch():
+
+        print("Number of batches:", len(dataloader_train))
+        total_loss = 0
+        stat_loss = 0
+
+        total_acc = np.zeros(len(opt.train_attributes_idx))
+        stat_acc = np.zeros(len(opt.train_attributes_idx))
+
+        model.train()
+
+        for batch_idx, batch_data in enumerate(tqdm(dataloader_train)):
+            batch_data['image'] = batch_data['image'].to(device)
+            batch_data['target'] = batch_data['target'].to(device)
+
+            # Forward pass
+            optimizer.zero_grad()
+            inputs = batch_data['image']
+
             pred = model(inputs)
             pred_labels = torch.where(pred > 0.5 , 1.0,0.0)
 
-            real_labels = torch.index_select(batch_data['attributes'],1,torch.tensor(opt.train_attributes_idx).to(device))
-
-        # Compute loss and metrics
-        loss = criterion(pred,real_labels)
-        acc = compute_accuracy(pred_labels,real_labels)
-
-        stat_loss += loss.item()
-        total_loss += loss.item()
-        stat_acc += acc
-        total_acc += acc
+            real_labels = torch.index_select(batch_data['target'],1,torch.tensor(opt.train_attributes_idx).to(device))
 
 
-        batch_interval = 50
-        if (batch_idx+1) % batch_interval == 0:
-            print(' ---- batch: %03d ----' % (batch_idx+1))
-            print('mean loss on the last 50 batches: %f'%(stat_loss/batch_interval))
-            print('mean accuracy on the last 50 batches: ' + str(stat_acc/batch_interval))
-            stat_loss = 0
-            stat_acc = 0
+            # Compute loss and gradients
+            loss = criterion(pred,real_labels)
+            acc = compute_accuracy(pred_labels,real_labels)
+
+            stat_loss += loss.item()
+            total_loss += loss.item()
+            stat_acc += acc
+            total_acc += acc
 
 
-    total_mean_loss = total_loss/len(dataloader_val)
-    total_mean_acc = total_acc/len(dataloader_val)
+            loss.backward()
+            optimizer.step()
 
-    print('mean loss over validation set: %f'%(total_mean_loss))
-    print('mean accuracy over validation set: '+str(total_mean_acc))
 
-    return total_mean_loss
+            batch_interval = 50
+            if (batch_idx+1) % batch_interval == 0:
+                print(' ---- batch: %03d ----' % (batch_idx+1))
+                print('mean loss on the last 50 batches: %f'%(stat_loss/batch_interval))
+                print('mean accuracy on the last 50 batches: '+ str(stat_acc/batch_interval))
+                stat_loss = 0
+                stat_acc = 0
+
+
+        total_mean_loss = total_loss/len(dataloader_train)
+        total_mean_acc = total_acc/len(dataloader_train)
+        print('mean loss over training set: %f'%(total_mean_loss))
+        print('mean accuracy over training set: ' + str(total_mean_acc))
+
+        return total_mean_loss
+
+
+    # Function: Evaluate one epoch
+    def evaluate_one_epoch():
+
+        model.eval()
+
+        total_loss = 0
+        stat_loss = 0
+        total_acc = np.zeros(len(opt.train_attributes_idx))
+        stat_acc = np.zeros(len(opt.train_attributes_idx))
+
+        print("Number of batches:", len(dataloader_val))
+
+        for batch_idx, batch_data in enumerate(tqdm(dataloader_val)):
+            batch_data['image'] = batch_data['image'].to(device)
+            batch_data['target'] = batch_data['target'].to(device)
+
+            # Forward pass
+
+            inputs = batch_data['image']
+            with torch.no_grad():
+                pred = model(inputs)
+                pred_labels = torch.where(pred > 0.5 , 1.0,0.0)
+
+                real_labels = torch.index_select(batch_data['target'],1,torch.tensor(opt.train_attributes_idx).to(device))
+
+            # Compute loss and metrics
+            loss = criterion(pred,real_labels)
+            acc = compute_accuracy(pred_labels,real_labels)
+
+            stat_loss += loss.item()
+            total_loss += loss.item()
+            stat_acc += acc
+            total_acc += acc
+
+
+            batch_interval = 50
+            if (batch_idx+1) % batch_interval == 0:
+                print(' ---- batch: %03d ----' % (batch_idx+1))
+                print('mean loss on the last 50 batches: %f'%(stat_loss/batch_interval))
+                print('mean accuracy on the last 50 batches: ' + str(stat_acc/batch_interval))
+                stat_loss = 0
+                stat_acc = 0
+
+
+        total_mean_loss = total_loss/len(dataloader_val)
+        total_mean_acc = total_acc/len(dataloader_val)
+
+        print('mean loss over validation set: %f'%(total_mean_loss))
+        print('mean accuracy over validation set: '+str(total_mean_acc))
+
+        return total_mean_loss
 
 
 
 # Create model (and select device)
-device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+device = "cuda:0" if torch.cuda.is_available() else "cpu"
+print(f"Using device: {device}")
 model = DecisionDensenetModel(num_classes=len(opt.train_attributes_idx), pretrained=False)
 model.to(device)
 

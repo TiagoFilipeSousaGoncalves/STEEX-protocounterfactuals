@@ -82,10 +82,9 @@ images_val   = "/path/to/dataset/BDD/bdd100k/seg/images/val"
 ```
 
 ## Train decision models
+For CelebaDB and CelebaMaskHQDB, train the respective decision models (densenet) with the command below. Please, precise the data path `<data_dir>` and the checkpoint directory `<checkpoints_dir>`. To choose between CelabA and CelebAMask-HQ, simply toggle the commented code block on the top in the Args class.
 
-For CelebA and CelebAMask-HQ, train the respective decision models (densenet) with the command below. Please, precise the data path `<data_dir>` and the checkpoint directory `<checkpoints_dir>`. To choose between CelabA and CelebAMask-HQ, simply toggle the commented code block on the top in the Args class.
-
-### Training arguments for CelebA (from the original paper)
+### Training arguments for CelebaDB (from the original paper)
 ```text
 results_dir='/nas-ctm01/homes/tgoncalv/STEEX-protocounterfactuals/results'
 images_dir='/nas-ctm01/datasets/public/BIOMETRICS/celeba-db/Img'
@@ -94,6 +93,23 @@ eval_dir='/nas-ctm01/datasets/public/BIOMETRICS/celeba-db/Eval'
 anno_dir='/nas-ctm01/datasets/public/BIOMETRICS/celeba-db/Anno'
 decision_model_name='decision_model_celeba'
 load_size=[128, 128]
+train_attributes_idx=[20, 31, 39]
+batch_size=32
+optimizer='Adam'
+lr=0.0001
+step_size=10
+gamma_scheduler=0.5
+num_epochs=5
+```
+
+### Training arguments for CelebaMaskHQDB (from the original paper)
+```text
+results_dir='/nas-ctm01/homes/tgoncalv/STEEX-protocounterfactuals/results'
+images_dir='/nas-ctm01/datasets/public/BIOMETRICS/celebamask-hq-db/CelebA-HQ-img'
+eval_dir='/nas-ctm01/datasets/public/BIOMETRICS/celebamask-hq-db/Eval'
+anno_dir='/nas-ctm01/datasets/public/BIOMETRICS/celebamask-hq-db/Anno'
+decision_model_name='decision_model_celebamaskhq'
+load_size=[256, 256]
 train_attributes_idx=[20, 31, 39]
 batch_size=32
 optimizer='Adam'
