@@ -86,6 +86,7 @@ For CelebaDB and CelebaMaskHQDB, train the respective decision models (densenet)
 
 ### Training arguments for CelebaDB (from the original paper)
 ```text
+dataset_name='CelebaDB'
 results_dir='/nas-ctm01/homes/tgoncalv/STEEX-protocounterfactuals/results'
 images_dir='/nas-ctm01/datasets/public/BIOMETRICS/celeba-db/Img'
 images_subdir='img_align_squared128_celeba'
@@ -104,6 +105,7 @@ num_epochs=5
 
 ### Training arguments for CelebaMaskHQDB (from the original paper)
 ```text
+dataset_name='CelebaMaskHQDB'
 results_dir='/nas-ctm01/homes/tgoncalv/STEEX-protocounterfactuals/results'
 images_dir='/nas-ctm01/datasets/public/BIOMETRICS/celebamask-hq-db/CelebA-HQ-img'
 eval_dir='/nas-ctm01/datasets/public/BIOMETRICS/celebamask-hq-db/Eval'
@@ -116,6 +118,21 @@ optimizer='Adam'
 lr=0.0001
 step_size=10
 gamma_scheduler=0.5
+num_epochs=5
+```
+
+### Training arguments for BDDOIADB
+```text
+dataset_name='BDDOIADB'
+results_dir='/nas-ctm01/homes/tgoncalv/STEEX-protocounterfactuals/results'
+data_dir='/nas-ctm01/datasets/public/bdd-oia/data'
+metadata_dir='/nas-ctm01/datasets/public/bdd-oia/metadata'
+crop_size=[512, 256]
+decision_model_name='decision_model_bddoia'
+train_attributes_idx=[0, 1, 2, 3]
+batch_size=8
+optimizer='Adam'
+lr=0.0001
 num_epochs=5
 ```
 
