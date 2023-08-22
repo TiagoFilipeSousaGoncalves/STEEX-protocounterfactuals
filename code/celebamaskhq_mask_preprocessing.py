@@ -32,7 +32,7 @@ label_list = ['skin', 'nose', 'eye_g', 'l_eye', 'r_eye', 'l_brow', 'r_brow', 'l_
 
 
 # Create folder if needed
-if not os.path.exist(folder_save):
+if not os.path.exists(folder_save):
     os.makedirs(folder_save)
 
 
