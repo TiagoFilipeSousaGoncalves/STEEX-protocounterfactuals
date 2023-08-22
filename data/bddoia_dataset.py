@@ -50,7 +50,7 @@ class BDDOIADB(torch.utils.data.Dataset):
         
 
         # Assign variables to class
-        self.images_fnames = images_fnames
+        self.images_fnames = list(images_fnames)
         self.images_annotations = images_annotations
         self.subset = subset
 
