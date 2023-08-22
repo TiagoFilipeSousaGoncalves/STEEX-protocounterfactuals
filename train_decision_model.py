@@ -35,8 +35,8 @@ parser.add_argument('--train_attributes_idx', type=int, nargs='+', required=True
 parser.add_argument('--batch_size', type=int, required=True, help="The batch size to load the data.")
 parser.add_argument('--optimizer', type=str, required=True, choices=['Adam'], help="The optimization algorithm to update the parameters of the model.")
 parser.add_argument('--lr', type=float, required=True, help="The learning rate for the optimizer.")
-parser.add_argument('--step_size', type=int, required=True, help="The step size for the scheduler.")
-parser.add_argument('--gamma_scheduler', type=float, required=True, help="The gamma for the scheduler.")
+parser.add_argument('--step_size', type=int, help="The step size for the scheduler (for CelebaDB, CelebaMaskHQDB).")
+parser.add_argument('--gamma_scheduler', type=float, help="The gamma for the scheduler (for CelebaDB, CelebaMaskHQDB).")
 parser.add_argument('--num_epochs', type=int, required=True, help="The number of epochs to train the model.")
 
 # Get argument values
@@ -53,6 +53,8 @@ if opt.dataset_name == 'CelebaDB':
     assert opt.eval_dir is not None
     assert opt.anno_dir is not None
     assert opt.load_size is not None
+    assert opt.step_size is not None
+    assert opt.gamma_scheduler is not None
 
     # Train
     data_train = CelebaDB(
@@ -81,6 +83,8 @@ elif opt.dataset_name == 'CelebaMaskHQDB':
     assert opt.eval_dir is not None
     assert opt.anno_dir is not None
     assert opt.load_size is not None
+    assert opt.step_size is not None
+    assert opt.gamma_scheduler is not None
 
     # Train
     data_train = CelebaMaskHQDB(
@@ -369,10 +373,14 @@ else:
 # Select the loss function
 criterion = nn.BCELoss(reduction='mean')
 
+
+# Function: Compute accuracy
 def compute_accuracy(pred, target):
     same_ids = (pred == target).float().cpu()
     return torch.mean(same_ids,axis=0).numpy()
 
+
+# Scheduler for (CelebaDB, CelebaMaskHQDB)
 scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=opt.step_size, gamma=opt.gamma_scheduler, verbose=True)
 
 
@@ -413,5 +421,7 @@ for epoch in range(opt.num_epochs):
         }
         torch.save(save_dict, os.path.join(checkpoints_dir, 'checkpoint.pt'))
 
-    # Update scheduler
-    scheduler.step()
+
+    # Update scheduler (for CelebaDB, CelebaMaskHQDB)
+    if opt.dataset_name in ('CelebaDB', 'CelebaMaskHQDB'):
+        scheduler.step()
