@@ -44,7 +44,7 @@ for k in range(img_num):
     for idx, label in enumerate(label_list):
         filename = os.path.join(folder_base, str(folder_num), str(k).rjust(5, '0') + '_' + label + '.png')
         if (os.path.exists(filename)):
-            print (label, idx+1)
+            print(label, idx+1)
             im = cv2.imread(filename)
             im = im[:, :, 0]
             im_base[im != 0] = (idx + 1)

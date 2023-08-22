@@ -1,5 +1,6 @@
 # Imports
 import os
+import random
 import pandas as pd
 from PIL import Image
 
@@ -11,16 +12,24 @@ from torchvision import transforms
 
 # Class: CelebaMaskHQDB
 class CelebaMaskHQDB(torch.utils.data.Dataset):
-    def __init__(self, images_dir='CelebA-HQ-img', eval_dir="Eval", anno_dir="Anno", subset='train', load_size=(256, 256), augment=False):
+    def __init__(self, images_dir='CelebA-HQ-img', masks_dir='CelebAMaskHQ-mask', eval_dir="Eval", anno_dir="Anno", subset='train', load_size=256, crop_size=256, label_nc=18, contain_dontcare_label=True, semantic_nc=19, cache_filelist_read=False, cache_filelist_write=False, aspect_ratio=1.0, augment=False):
         super(CelebaMaskHQDB, self).__init__()
 
         assert subset in ('train', 'val', 'test')
 
         # Assign class variables
         self.images_dir = images_dir
+        self.masks_dir = masks_dir
         self.eval_dir = eval_dir
         self.anno_dir = anno_dir
         self.load_size = load_size
+        self.crop_size = crop_size
+        self.label_nc = label_nc
+        self.contain_dontcare_label = contain_dontcare_label
+        self.semantic_nc = semantic_nc # label_nc + unknown
+        self.cache_filelist_read = cache_filelist_read
+        self.cache_filelist_write = cache_filelist_write
+        self.aspect_ratio = aspect_ratio        
         self.augment = augment
 
         # Load images
@@ -101,36 +110,17 @@ class CelebaMaskHQDB(torch.utils.data.Dataset):
     # Method: Images & Masks Dict
     def load_celebahq_images_masks_dict(self, celebahq_images, celebahq_masks):
 
+        assert len(celebahq_images) == len(celebahq_masks)
+
         # Create a dictionary
         celebahq_images_masks_dict = dict()
 
         # Go through images list
         for image_fname in celebahq_images:
-            image_id = int(image_fname.split('.')[0])
-
-            # Suffix for masks
-            image_mask_suffix = '%05d' % image_id
-
-            # Get masks
-            image_masks = [m for m in self.celebahq_masks if m.startswith(image_mask_suffix)]
+            mask_fname = image_fname.replace("jpg", "png")
             
-            # Populate dictionary
-            if image_fname not in celebahq_images_masks_dict.keys():
-                celebahq_images_masks_dict[image_fname] = image_masks
-            
-        
-        # Some sanity checks
-        # Number of Images
-        nr_images = len(celebahq_images)
-        nr_images_in_dict = len(celebahq_images_masks_dict)
-        assert nr_images == nr_images_in_dict
-
-        # Number of Masks
-        nr_masks = len(celebahq_masks)
-        nr_masks_in_dict = 0
-        for _, masks in celebahq_images_masks_dict.items():
-            nr_masks_in_dict += len(masks)
-        assert nr_masks == nr_masks_in_dict
+            if mask_fname in celebahq_masks:
+                celebahq_images_masks_dict[image_fname] = mask_fname
 
         return celebahq_images_masks_dict
 
@@ -197,24 +187,35 @@ class CelebaMaskHQDB(torch.utils.data.Dataset):
         # Iterate through f_data_split
         for image_fname in f_data_split:
             if image_fname in celebahq_images_masks_dict.keys():
-                image_masks = celebahq_images_masks_dict[image_fname]
+                mask_fname = celebahq_images_masks_dict[image_fname]
                 images_subset.append(image_fname)
-                masks_subset.append(image_masks)
+                masks_subset.append(mask_fname)
 
         return images_subset, masks_subset
 
 
     # Method: Transforms
-    def transforms(self, image, attributes):
+    def transforms(self, image, mask):
+        
+        # Resize
+        new_width, new_height = (int(self.load_size / self.aspect_ratio), self.load_size)
+        image = transforms.functional.resize(image, (new_width, new_height), Image.BICUBIC)
+        mask = transforms.functional.resize(mask, (new_width, new_height), Image.NEAREST)
+        
+        # Apply augmentation (flips)
+        if self.augment:
+            if random.random() < 0.5:
+                image = transforms.functional.hflip(image)
+                mask = transforms.functional.hflip(mask)
 
-        image = transforms.functional.resize(image, self.load_size, Image.BICUBIC)
+        # Convert to tensor
         image = transforms.functional.to_tensor(image)
+        mask = transforms.functional.to_tensor(mask)
+        
+        # Apply normalization
         image = transforms.functional.normalize(image, (0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
-
-        attributes = torch.Tensor(attributes)
-        attributes = (attributes + 1)/2
-
-        return image, attributes
+        
+        return image, mask
 
 
     # Method: __len__
@@ -225,13 +226,12 @@ class CelebaMaskHQDB(torch.utils.data.Dataset):
     # Method: __getitem__
     def __getitem__(self, idx):
 
-        # Read and load image(s)
+        # Read and load image(s) and mask(s)
         image = Image.open(os.path.join(self.images_dir, self.images[idx])).convert('RGB')
-
-        # Read and load attribute(s)
-        attributes = self.attributes[self.images[idx]]
-
-        # Apply transforms
-        image, attributes = self.transforms(image, attributes)
-
-        return {"image": image, "attributes": attributes, "id": self.images[idx]}
+        mask = Image.open(os.path.join(self.masks_dir, self.masks[idx]))
+        
+        # Apply augmentation
+        image, mask = self.transforms(image, mask)
+        mask = mask.float()
+        
+        return {"image": image, "label": mask, "name": self.images[idx]}

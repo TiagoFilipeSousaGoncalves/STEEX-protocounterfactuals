@@ -9,7 +9,7 @@ import torch.nn as nn
 import torchvision
 
 # Project Imports
-from data_seg_utilities import BDD10kDB
+from data_seg_utilities import BDD10kDB, CelebaMaskHQDB
 from train_val_test_seg_utilities import train_one_epoch, evaluate_one_epoch
 
 
@@ -20,8 +20,11 @@ parser = argparse.ArgumentParser(description="Train the segmentation model for C
 # CLI Arguments
 parser.add_argument('--dataset_name', type=str, required=True, choices=['CelebaMaskHQDB', 'BDD10kDB'], help="The name of the database.")
 parser.add_argument('--results_dir', type=str, required=True, help="The results directory.")
-parser.add_argument('--images_dir', type=str, help="Images directory (for BDD10kDB).")
+parser.add_argument('--images_dir', type=str, help="Images directory (for BDD10kDB, CelebaMaskHQDB).")
 parser.add_argument('--labels_dir', type=str, help="Labels directory (for BDD10kDB).")
+parser.add_argument('--masks_dir', type=str, help="Labels directory (for CelebaMaskHQDB).")
+parser.add_argument('--eval_dir', type=str, help="Evaluation directory (for CelebaMaskHQDB).")
+parser.add_argument('--anno_dir', type=str, help="Annotation directory (for CelebaMaskHQDB).")
 parser.add_argument('--n_classes', type=int, required=True, choices=[19, 20], help="Number of segmentation classes.")
 parser.add_argument('--pretrained', action='store_true', help="Initialize segmentation model with pretrained weights.")
 parser.add_argument('--segmentation_network_name', type=str, required=True, choices=['deeplabv3_bdd10k', 'deeplabv3_celebamaskhq'], help="The name for the segmentation network.")
@@ -37,7 +40,31 @@ opt = parser.parse_args()
 # Load datasets (and subsets)
 # CelebaMaskHQDB
 if opt.dataset_name == 'CelebaMaskHQDB':
-    pass
+    
+    assert opt.images_dir is not None
+    assert opt.masks_dir is not None
+    assert opt.eval_dir is not None
+    assert opt.anno_dir is not None
+    assert opt.segmentation_network_name == 'deeplabv3_celebamaskhq'
+    assert opt.n_classes == 19
+
+    # Train
+    dataset_train = CelebaMaskHQDB(
+        images_dir=opt.images_dir,
+        masks_dir=opt.masks_dir,
+        eval_dir=opt.eval_dir,
+        anno_dir=opt.anno_dir,
+        subset='train',
+        load_size=256,
+        crop_size=256,
+        label_nc=18,
+        contain_dontcare_label=True,
+        semantic_nc=19,
+        cache_filelist_read=False,
+        cache_filelist_write=False,
+        aspect_ratio=1.0,
+        augment=False
+    )
 
 # BDD100kDB
 else:
