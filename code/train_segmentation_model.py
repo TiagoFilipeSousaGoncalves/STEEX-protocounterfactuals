@@ -50,7 +50,7 @@ else:
     # Train
     dataset_train = BDD100kDB(
         images_dir=opt.images_dir,
-        labels_dir='labels',
+        labels_dir=opt.labels_dir,
         subset='train',
         load_size=512,
         crop_size=512,
@@ -65,8 +65,8 @@ else:
 
     # Validation
     dataset_val = BDD100kDB(
-        images_dir='images',
-        labels_dir='labels',
+        images_dir=opt.images_dir,
+        labels_dir=opt.labels_dir,
         subset='val',
         load_size=512,
         crop_size=512,
