@@ -10,6 +10,6 @@
 
 echo "STEEX-Protocounterfactuals | Train Segmentation Model BDD100kDB | Started"
 
-python code/train_segmentation_model.py --dataset_name 'BDD100kDB' --results_dir '/nas-ctm01/homes/tgoncalv/STEEX-protocounterfactuals/results' --images_dir '/nas-ctm01/datasets/public/bdd100k/images' --labels_dir '/nas-ctm01/datasets/public/bdd100k/labels' --n_classes 20 segmentation_network_name 'deeplabv3_bdd100k' --seed 42 --batch_size 8 --num_epochs 50
+python code/train_segmentation_model.py --dataset_name 'BDD100kDB' --results_dir '/nas-ctm01/homes/tgoncalv/STEEX-protocounterfactuals/results' --images_dir '/nas-ctm01/datasets/public/bdd100k/images' --labels_dir '/nas-ctm01/datasets/public/bdd100k/labels' --n_classes 20 --segmentation_network_name 'deeplabv3_bdd100k' --seed 42 --batch_size 8 --num_epochs 50
 
 echo "STEEX-Protocounterfactuals | Train Segmentation Model BDD100kDB | Finished"
