@@ -10,6 +10,6 @@
 
 echo "STEEX-Protocounterfactuals | Preprocess CelebAMask | Started"
 
-python code/celebamaskhq_mask_preprocessing.py --folder_base '/nas-ctm01/datasets/public/BIOMETRICS/celebamask-hq-db/CelebAMask-HQ-mask-anno' --out_folder '/nas-ctm01/datasets/public/BIOMETRICS/celebamask-hq-db/CelebAMaskHQ-mask'
+python code/celebamaskhq_mask_preprocessing.py --folder_base '/nas-ctm01/datasets/public/BIOMETRICS/celebamask-hq-db/CelebAMask-HQ-mask-anno' --folder_save '/nas-ctm01/datasets/public/BIOMETRICS/celebamask-hq-db/CelebAMaskHQ-mask'
 
 echo "STEEX-Protocounterfactuals | Preprocess CelebAMask | Finished"
