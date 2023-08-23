@@ -12,7 +12,7 @@ from torchvision import transforms
 
 # Class: BDD10kDB
 class BDD10kDB(torch.utils.data.Dataset):
-    def __init__(self, images_dir='images', labels_dir='labels', subset='train', load_size=512, crop_size=512, label_nc=19, contain_dontcare_label=True, semantic_nc=18, cache_filelist_read=False, cache_filelist_write=False, aspect_ratio=2.0, augment=False):
+    def __init__(self, images_dir='images', labels_dir='labels', subset='train', load_size=512, crop_size=512, label_nc=19, contain_dontcare_label=True, semantic_nc=18, cache_filelist_read=False, cache_filelist_write=False, aspect_ratio=2.0, augment=False, seed=42):
         super(BDD10kDB, self).__init__()
 
         assert subset in ('train', 'val', 'test')
@@ -29,6 +29,10 @@ class BDD10kDB(torch.utils.data.Dataset):
         self.cache_filelist_write = cache_filelist_write
         self.aspect_ratio = aspect_ratio
         self.augment = augment
+
+
+        # Set random seed
+        random.seed(seed)
 
 
         # Load 100k data
@@ -160,7 +164,7 @@ class BDD10kDB(torch.utils.data.Dataset):
 
 # Class: CelebaMaskHQDB
 class CelebaMaskHQDB(torch.utils.data.Dataset):
-    def __init__(self, images_dir='CelebA-HQ-img', masks_dir='CelebAMaskHQ-mask', eval_dir="Eval", anno_dir="Anno", subset='train', load_size=256, crop_size=256, label_nc=18, contain_dontcare_label=True, semantic_nc=19, cache_filelist_read=False, cache_filelist_write=False, aspect_ratio=1.0, augment=False):
+    def __init__(self, images_dir='CelebA-HQ-img', masks_dir='CelebAMaskHQ-mask', eval_dir="Eval", anno_dir="Anno", subset='train', load_size=256, crop_size=256, label_nc=18, contain_dontcare_label=True, semantic_nc=19, cache_filelist_read=False, cache_filelist_write=False, aspect_ratio=1.0, augment=False, seed=42):
         super(CelebaMaskHQDB, self).__init__()
 
         assert subset in ('train', 'val', 'test')
@@ -179,6 +183,11 @@ class CelebaMaskHQDB(torch.utils.data.Dataset):
         self.cache_filelist_write = cache_filelist_write
         self.aspect_ratio = aspect_ratio        
         self.augment = augment
+
+
+        # Set random seed
+        random.seed(seed)
+
 
         # Load images
         celebahq_images = self.load_celebahq_images()

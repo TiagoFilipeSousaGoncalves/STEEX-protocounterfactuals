@@ -63,7 +63,8 @@ if opt.dataset_name == 'CelebaMaskHQDB':
         cache_filelist_read=False,
         cache_filelist_write=False,
         aspect_ratio=1.0,
-        augment=True
+        augment=True,
+        seed=opt.seed
     )
 
     # Validation
@@ -81,7 +82,8 @@ if opt.dataset_name == 'CelebaMaskHQDB':
         cache_filelist_read=False,
         cache_filelist_write=False,
         aspect_ratio=1.0,
-        augment=False
+        augment=False,
+        seed=opt.seed
     )
 
 # BDD10kDB
@@ -105,7 +107,8 @@ else:
         cache_filelist_read=False,
         cache_filelist_write=False,
         aspect_ratio=2.0,
-        augment=True
+        augment=True,
+        seed=opt.seed
     )
 
     # Validation
@@ -121,7 +124,8 @@ else:
         cache_filelist_read=False,
         cache_filelist_write=False,
         aspect_ratio=2.0,
-        augment=False
+        augment=False,
+        seed=opt.seed
     )
 
 
