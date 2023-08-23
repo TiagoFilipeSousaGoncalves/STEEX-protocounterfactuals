@@ -63,10 +63,28 @@ if opt.dataset_name == 'CelebaMaskHQDB':
         cache_filelist_read=False,
         cache_filelist_write=False,
         aspect_ratio=1.0,
+        augment=True
+    )
+
+    # Validation
+    dataset_val = CelebaMaskHQDB(
+        images_dir=opt.images_dir,
+        masks_dir=opt.masks_dir,
+        eval_dir=opt.eval_dir,
+        anno_dir=opt.anno_dir,
+        subset='val',
+        load_size=256,
+        crop_size=256,
+        label_nc=18,
+        contain_dontcare_label=True,
+        semantic_nc=19,
+        cache_filelist_read=False,
+        cache_filelist_write=False,
+        aspect_ratio=1.0,
         augment=False
     )
 
-# BDD100kDB
+# BDD10kDB
 else:
 
     assert opt.images_dir is not None
