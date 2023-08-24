@@ -39,10 +39,18 @@ if not os.path.exists(folder_save):
 
 # Apply processing (https://github.com/switchablenorms/CelebAMask-HQ/blob/master/face_parsing/Data_preprocessing/g_mask.py)
 for k in range(img_num):
-    folder_num = k // 2000
+    
+    # Note: In our server, we don't have folders
+    # folder_num = k // 2000
+    
+    # Create a base image
     im_base = np.zeros((512, 512))
     for idx, label in enumerate(label_list):
-        filename = os.path.join(folder_base, str(folder_num), str(k).rjust(5, '0') + '_' + label + '.png')
+        
+        # Note: In our server, we don't have folders
+        # filename = os.path.join(folder_base, str(folder_num), str(k).rjust(5, '0') + '_' + label + '.png')
+        filename = os.path.join(folder_base, str(k).rjust(5, '0') + '_' + label + '.png')
+        
         if (os.path.exists(filename)):
             print(label, idx+1)
             im = cv2.imread(filename)
