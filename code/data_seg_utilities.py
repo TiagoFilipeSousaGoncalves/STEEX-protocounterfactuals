@@ -12,7 +12,7 @@ from torchvision import transforms
 
 # Class: BDD10kDB
 class BDD10kDB(torch.utils.data.Dataset):
-    def __init__(self, images_dir='images', labels_dir='labels', subset='train', load_size=512, crop_size=512, label_nc=19, contain_dontcare_label=True, semantic_nc=18, cache_filelist_read=False, cache_filelist_write=False, aspect_ratio=2.0, augment=False, seed=42):
+    def __init__(self, images_dir='images', labels_dir='labels', subset='train', load_size=512, crop_size=512, label_nc=19, contain_dontcare_label=True, semantic_nc=20, cache_filelist_read=False, cache_filelist_write=False, aspect_ratio=2.0, augment=False, seed=42):
         super(BDD10kDB, self).__init__()
 
         assert subset in ('train', 'val', 'test')

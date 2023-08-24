@@ -52,6 +52,14 @@ class BaseOptions():
         # For setting inputs
         parser.add_argument('--dataroot', type=str, default='./datasets/cityscapes/')
         parser.add_argument('--dataset_mode', type=str, default='coco')
+
+        # For datasets
+        parser.add_argument('--images_dir', type=str, help="The directory of the images (for BDDOIADB, CelebaDB, CelebaMaskHQDB).")
+        parser.add_argument('--labels_dir', type=str, help="The directory of the labels (for BDDOIADB).")
+        parser.add_argument('--masks_dir', type=str, help="The directory of the masks (for CelebaDB, CelebaMaskHQDB).")
+        parser.add_argument('--eval_dir', type=str, help="The directory of the data splits (for CelebaDB, CelebaMaskHQDB).")
+        parser.add_argument('--anno_dir', type=str, help="The directory of the annotations (for CelebaDB, CelebaMaskHQDB).")
+
         parser.add_argument('--serial_batches', action='store_true', help='if true, takes images in order to make batches, otherwise takes them randomly')
         parser.add_argument('--no_flip', action='store_true', help='if specified, do not flip the images for data argumentation')
         parser.add_argument('--nThreads', default=28, type=int, help='# threads for loading data')

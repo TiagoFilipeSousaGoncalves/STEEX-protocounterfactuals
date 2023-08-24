@@ -9,6 +9,7 @@ Licensed under the CC BY-NC-SA 4.0 license (https://creativecommons.org/licenses
 import importlib
 import os
 import numpy as np
+import pandas as pd
 import random
 from PIL import Image
 import json
@@ -769,34 +770,190 @@ class CelebaDB(Pix2pixDataset):
         parser.set_defaults(label_nc=13)
         parser.set_defaults(contain_dontcare_label=False)
 
-        parser.add_argument('--label_dir', type=str, required=True,
-                            help='path to the directory that contains label images')
-        parser.add_argument('--image_dir', type=str, required=True,
-                            help='path to the directory that contains photo images')
-        parser.add_argument('--instance_dir', type=str, default='',
-                            help='path to the directory that contains instance maps. Leave black if not exists')
+        # Additional arguments for CelebaDB
+        parser.add_argument('--images_dir', type=str, required=True, help="Path to the directory that contains the images.")
+        parser.add_argument('--images_subdir', type=str, required=True, help="Path to the sub-directory that contains the images.")
+        parser.add_argument('--eval_dir', type=str, required=True, help="Path to the directory that contains the data splits.")
+        parser.add_argument('--anno_dir', type=str, required=True, help="Path to the directory that contains the annotations.")
+        
         return parser
 
-    def get_paths(self, opt):
-        label_dir = opt.label_dir
-        label_paths = make_dataset(label_dir, recursive=False, read_cache=True)
 
-        image_dir = opt.image_dir
-        image_paths = make_dataset(image_dir, recursive=False, read_cache=True)
+    # Method: Get data paths
+    def get_paths(self, subset):
 
-        if len(opt.instance_dir) > 0:
-            instance_dir = opt.instance_dir
-            instance_paths = make_dataset(instance_dir, recursive=False, read_cache=True)
+        # Data splits
+        train_set, val_set, test_set = self.load_data_splits()
+
+        # DeepLabV3 Masks
+        deeplabv3_masks = self.load_deeplabv3_masks()
+
+        # Get subset of images and attributes
+        # Images
+        if subset == 'train':
+            images_subset = train_set
+        elif subset == 'val':
+            images_subset = val_set
         else:
-            instance_paths = []
+            images_subset = test_set
+        
 
-        assert len(label_paths) == len(image_paths), "The #images in %s and %s do not match. Is there something wrong?"
+        # Align data (depends on the subset)
+        images, masks = list(), list()
+        for image_fname in images_subset:
+            if image_fname in deeplabv3_masks:
+                images.append(image_fname)
+                masks.append(image_fname)
+        
+        assert len(images) == len(masks)
 
-        return label_paths, image_paths, instance_paths
+        return images, masks
+
+
+    # Method: Initialize
+    def initialize(self, opt, subset):
+
+        assert opt.images_subdir in ('img_celeba', 'img_align_celeba', 'img_align_squared128_celeba')
+        assert subset in ('train', 'val', 'test')
+
+        # Add variables to class variables
+        self.images_dir = opt.images_dir
+        self.images_subdir = opt.images_subdir
+        self.eval_dir = opt.eval_dir
+        self.anno_dir = opt.anno_dir
+        self.load_size = opt.load_size
+        self.augment = augment
+        self.subset = subset
+
+        # Get data
+        self.images, self.masks = self.get_paths(subset=subset)
+
+        return
     
 
-    def initialize(self, opt):
-        pass
+    # Method: Load data splits
+    def load_data_splits(self):
+
+        # Read data partitions file
+        list_eval_partition = pd.read_csv(os.path.join(self.eval_dir, "list_eval_partition.txt"), delimiter=" ", header=None)
+        list_eval_partition = list_eval_partition.values
+
+        # Get train (column==0)
+        train = list_eval_partition[list_eval_partition[:,1]==0]
+        train = list(train[:, 0])
+        
+        # Get validation (column==1)
+        validation = list_eval_partition[list_eval_partition[:,1]==1]
+        validation = list(validation[:, 0])
+
+        # Get test (column==2)
+        test = list_eval_partition[list_eval_partition[:,1]==2]
+        test = list(test[:, 0])
+
+        return train, validation, test
+    
+
+    # Method: Load DeepLabV3 masks
+    def load_deeplabv3_masks(self):
+
+        # Get the path of the masks
+        masks_path = os.path.join(self.anno_dir, 'deeplabv3_masks')
+        masks = [m for m in os.listdir(masks_path) if not m.startswith('.')]
+
+        return masks
+    
+
+    # Method: Check if paths match
+    def paths_match(self, path1, path2):
+        filename1_without_ext = os.path.splitext(os.path.basename(path1))[0]
+        filename2_without_ext = os.path.splitext(os.path.basename(path2))[0]
+        return filename1_without_ext == filename2_without_ext
+
+
+    # Method: __getitem__
+    def __getitem__(self, idx):
+
+        # Label(s) (mask(s) of the image(s))
+        label_path = os.path.join(self.anno_dir, 'deeplabv3_masks', self.masks[idx])
+        label = Image.open(label_path)
+        params = get_params(self.opt, label.size)
+        transform_label = get_transform(self.opt, params, method=Image.NEAREST, normalize=False)
+        label_tensor = transform_label(label) * 255.0
+        label_tensor[label_tensor == 255] = self.opt.label_nc  # 'unknown' is opt.label_nc
+
+        # Image(s)
+        image_path = os.path.join(self.images_dir, self.images_subdir, self.images[idx])
+        assert self.paths_match(label_path, image_path), "The label_path %s and image_path %s don't match." % (label_path, image_path)
+        image = Image.open(image_path).convert('RGB')
+        transform_image = get_transform(self.opt, params)
+        image_tensor = transform_image(image)
+
+        # if using instance maps
+        if self.opt.no_instance:
+            instance_tensor = 0
+        else:
+            instance_path = self.instance_paths[idx]
+            instance = Image.open(instance_path)
+            if instance.mode == 'L':
+                instance_tensor = transform_label(instance) * 255
+                instance_tensor = instance_tensor.long()
+            else:
+                instance_tensor = transform_label(instance)
+
+        input_dict = {'label': label_tensor,
+                      'instance': instance_tensor,
+                      'image': image_tensor,
+                      'path': image_path,
+                      }
+
+        # Give subclasses a chance to modify the final output
+        self.postprocess(input_dict)
+
+        return input_dict
+
+
+    # Method: Postprocessing function
+    def postprocess(self, input_dict):
+        return input_dict
+
+
+    # Method: __len__
+    def __len__(self):
+        return len(self.images)
+
+
+    # Our codes get input images and labels
+    def get_input_by_names(self, image_path, image, label_img):
+        label = Image.fromarray(label_img)
+        params = get_params(self.opt, label.size)
+        transform_label = get_transform(self.opt, params, method=Image.NEAREST, normalize=False)
+        label_tensor = transform_label(label) * 255.0
+        label_tensor[label_tensor == 255] = self.opt.label_nc  # 'unknown' is opt.label_nc
+        label_tensor.unsqueeze_(0)
+
+
+        # input image (real images)]
+        # image = Image.open(image_path)
+        # image = image.convert('RGB')
+
+        transform_image = get_transform(self.opt, params)
+        image_tensor = transform_image(image)
+        image_tensor.unsqueeze_(0)
+
+        # if using instance maps
+        if self.opt.no_instance:
+            instance_tensor = torch.Tensor([0])
+
+        input_dict = {'label': label_tensor,
+                      'instance': instance_tensor,
+                      'image': image_tensor,
+                      'path': image_path,
+                      }
+
+        # Give subclasses a chance to modify the final output
+        self.postprocess(input_dict)
+
+        return input_dict
 
 
 
@@ -818,34 +975,242 @@ class CelebaMaskHQDB(Pix2pixDataset):
         parser.set_defaults(label_nc=13)
         parser.set_defaults(contain_dontcare_label=False)
 
-        parser.add_argument('--label_dir', type=str, required=True,
-                            help='path to the directory that contains label images')
-        parser.add_argument('--image_dir', type=str, required=True,
-                            help='path to the directory that contains photo images')
-        parser.add_argument('--instance_dir', type=str, default='',
-                            help='path to the directory that contains instance maps. Leave black if not exists')
+        # Additional arguments for CelebaMaskHQDB
+        parser.add_argument('--images_dir', type=str, required=True, help='Path to the directory that contains the images.')
+        parser.add_argument('--eval_dir', type=str, required=True, help='Path to the directory that contains the data splits.')
+        parser.add_argument('--anno_dir', type=str, required=True, help='Path to the directory that contains the annotations.')
+        
         return parser
 
-    def get_paths(self, opt):
-        label_dir = opt.label_dir
-        label_paths = make_dataset(label_dir, recursive=False, read_cache=True)
 
-        image_dir = opt.image_dir
-        image_paths = make_dataset(image_dir, recursive=False, read_cache=True)
+    # Method: 
+    def get_paths(self, opt, subset):
 
-        if len(opt.instance_dir) > 0:
-            instance_dir = opt.instance_dir
-            instance_paths = make_dataset(instance_dir, recursive=False, read_cache=True)
+        # Load CelebaMaskHQ to CelebA mapping
+        self.celebahq_to_celeba_mapp = self.load_celebahq_to_celeba_mapp()
+
+        # Read original data splits
+        train_set, val_set, test_set = self.load_data_splits()
+
+        # Fix data splits (using the CelebaMaskHQ to CelebA mapping)
+        train_set_f, val_set_f, test_set_f = self.fix_data_splits(train_set, val_set, test_set)
+
+        # Get masks
+        deeplabv3_masks = self.load_deeplabv3_masks()
+
+        if subset == 'train':
+            images_subset = train_set_f
+        elif subset == 'val':
+            images_subset = val_set_f
         else:
-            instance_paths = []
+            images_subset = test_set_f
 
-        assert len(label_paths) == len(image_paths), "The #images in %s and %s do not match. Is there something wrong?"
 
-        return label_paths, image_paths, instance_paths
+        # Get final images and masks
+        images, masks = list(), list()
+        for image_fname in images_subset:
+            if image_fname in deeplabv3_masks:
+                images.append(image_fname)
+                masks.append(image_fname)
+
+        return images, masks
     
 
-    def initialize(self, opt):
-        pass
+    def initialize(self, opt, subset):
+
+        assert subset in ('train', 'val', 'test')
+
+        # Assign class variables
+        self.images_dir = opt.images_dir
+        self.eval_dir = opt.eval_dir
+        self.anno_dir = opt.anno_dir
+        self.load_size = opt.load_size
+        self.augment = opt.augment
+
+
+        # Get data
+        self.images, self.masks = self.get_paths(subset=subset)
+
+        return
+    
+
+    # Method: Check if paths match
+    def paths_match(self, path1, path2):
+        filename1_without_ext = os.path.splitext(os.path.basename(path1))[0]
+        filename2_without_ext = os.path.splitext(os.path.basename(path2))[0]
+        return filename1_without_ext == filename2_without_ext
+
+
+    # Method: __getitem__
+    def __getitem__(self, idx):
+
+        # Get label(s) (mask(s) of the image(s))
+        label_path = os.path.join(self.anno_dir, 'deeplabv3_maks', self.masks[idx])
+        label = Image.open(label_path)
+        params = get_params(self.opt, label.size)
+        transform_label = get_transform(self.opt, params, method=Image.NEAREST, normalize=False)
+        label_tensor = transform_label(label) * 255.0
+        label_tensor[label_tensor == 255] = self.opt.label_nc  # 'unknown' is opt.label_nc
+
+        # Get image(s)
+        image_path = os.path.join(self.images_dir, self.images[idx])
+        assert self.paths_match(label_path, image_path), "The label_path %s and image_path %s don't match." % (label_path, image_path)
+        image = Image.open(image_path).convert('RGB')
+        transform_image = get_transform(self.opt, params)
+        image_tensor = transform_image(image)
+
+        # if using instance maps
+        if self.opt.no_instance:
+            instance_tensor = 0
+        else:
+            instance_path = self.instance_paths[idx]
+            instance = Image.open(instance_path)
+            if instance.mode == 'L':
+                instance_tensor = transform_label(instance) * 255
+                instance_tensor = instance_tensor.long()
+            else:
+                instance_tensor = transform_label(instance)
+
+        input_dict = {'label': label_tensor,
+                      'instance': instance_tensor,
+                      'image': image_tensor,
+                      'path': image_path,
+                      }
+
+        # Give subclasses a chance to modify the final output
+        self.postprocess(input_dict)
+
+        return input_dict
+
+
+    # Method: Postprocessing function
+    def postprocess(self, input_dict):
+        return input_dict
+
+
+    # Method: __len__
+    def __len__(self):
+        return self.dataset_size
+
+
+    # Our codes get input images and labels
+    def get_input_by_names(self, image_path, image, label_img):
+        label = Image.fromarray(label_img)
+        params = get_params(self.opt, label.size)
+        transform_label = get_transform(self.opt, params, method=Image.NEAREST, normalize=False)
+        label_tensor = transform_label(label) * 255.0
+        label_tensor[label_tensor == 255] = self.opt.label_nc  # 'unknown' is opt.label_nc
+        label_tensor.unsqueeze_(0)
+
+
+        # input image (real images)]
+        # image = Image.open(image_path)
+        # image = image.convert('RGB')
+
+        transform_image = get_transform(self.opt, params)
+        image_tensor = transform_image(image)
+        image_tensor.unsqueeze_(0)
+
+        # if using instance maps
+        if self.opt.no_instance:
+            instance_tensor = torch.Tensor([0])
+
+        input_dict = {'label': label_tensor,
+                      'instance': instance_tensor,
+                      'image': image_tensor,
+                      'path': image_path,
+                      }
+
+        # Give subclasses a chance to modify the final output
+        self.postprocess(input_dict)
+
+        return input_dict
+    
+
+    # Method: Load data splits
+    def load_data_splits(self):
+
+        # Read data partitions file
+        list_eval_partition = pd.read_csv(os.path.join(self.eval_dir, "list_eval_partition.txt"), delimiter=" ", header=None)
+        list_eval_partition = list_eval_partition.values
+
+        # Get train (column==0)
+        train = list_eval_partition[list_eval_partition[:,1]==0]
+        train = list(train[:, 0])
+        
+        
+        # Get validation (column==1)
+        validation = list_eval_partition[list_eval_partition[:,1]==1]
+        validation = list(validation[:, 0])
+
+        # Get test (column==2)
+        test = list_eval_partition[list_eval_partition[:,1]==2]
+        test = list(test[:, 0])
+
+        return train, validation, test
+
+
+    # Method: Load CelebA-HQ to CelebA mapping
+    def load_celebahq_to_celeba_mapp(self):
+
+        # Build a dictionary
+        celebahq_to_celeba_mapp = dict()
+
+        # Read celebahq_to_celeba_mapp file
+        celebahq_to_celeba_mapp_txt = os.path.join(self.anno_dir, "CelebA-HQ-to-CelebA-mapping.txt")
+
+        # Open file contents
+        with open(celebahq_to_celeba_mapp_txt, 'r') as f:
+            for line_idx, line in enumerate(f.readlines()):
+                
+                # Serialise line
+                line_ser = line.strip().split()
+
+                if line_idx == 0:
+                    orig_idx = line_ser[1]
+                    orig_file = line_ser[2]
+                else:
+                    idx = line_ser[0]
+                    if idx not in celebahq_to_celeba_mapp.keys():
+                        celebahq_to_celeba_mapp[idx] = {orig_idx:line_ser[1], orig_file:line_ser[2]}
+
+        return celebahq_to_celeba_mapp
+    
+
+    # Method: Fix data splits
+    def fix_data_splits(self, train_set, val_set, test_set):
+
+        # Generate lists for fixed partitions
+        train_set_f, val_set_f, test_set_f = list(), list(), list()
+
+        # Go through the CelebA-HQ to CelebA mapping
+        for img_idx, img_mapp in self.celebahq_to_celeba_mapp.items():
+
+            # Create image filename
+            img_fname = f'{img_idx}.jpg'
+
+            # Get original index and original fname
+            _, img_orig_fname = img_mapp['orig_idx'], img_mapp['orig_file']
+
+            # From the original fnames, let's map the current images
+            if img_orig_fname in train_set:
+                train_set_f.append(img_fname)
+            elif img_orig_fname in val_set:
+                val_set_f.append(img_fname)
+            elif img_orig_fname in test_set:
+                test_set_f.append(img_fname)
+
+        return train_set_f, val_set_f, test_set_f
+
+
+    # Method: Load DeepLabV3 Masks
+    def load_deeplabv3_masks(self):
+
+        # Get masks path
+        masks_path = os.path.join(self.anno_dir, 'deeplabv3_masks')
+        masks = [m for m in os.listdir(masks_path) if not m.startswith('.')]
+
+        return masks
 
 
 

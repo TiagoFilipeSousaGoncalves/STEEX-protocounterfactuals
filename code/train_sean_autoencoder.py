@@ -9,21 +9,19 @@ Licensed under the CC BY-NC-SA 4.0 license (https://creativecommons.org/licenses
 import sys
 from collections import OrderedDict
 
+# PyTorch Imports
+import torch.utils.data
+
 # Project Imports
-import data_sean as data
+from data_utilities_sean import BDDOIADB, CelebaDB, CelebaMaskHQDB
 from option_utilities_sean import TrainOptions
 from utilities_sean.iter_counter import IterationCounter
 from utilities_sean.visualizer import Visualizer
 from train_val_test_utilities_sean import Pix2PixTrainer
 
 
-# ######## added stuff
-# import os
-# os.environ["CUDA_VISIBLE_DEVICES"]="1"
 
-
-
-# parse options
+# CLI Interface
 opt = TrainOptions().parse()
 
 # print options to help debugging
@@ -32,16 +30,65 @@ print(' '.join(sys.argv))
 # Load the dataset
 # dataloader = data.create_dataloader(opt)
 if opt.dataset_mode == "BDDOIADB":
-    pass
+    
+    assert opt.images_dir is not None
+    assert opt.labels_dir is not None
+    assert opt.load_size == 512
+    assert opt.crop_size == 512
+    assert opt.label_nc == 19
+    assert opt.contain_dontcare_label == True
+    assert opt.semantic_nc == 20
+    assert opt.cache_filelist_read == False
+    assert opt.cache_filelist_write == False
+    assert opt.aspect_ratio == 2.0
+    assert opt.augment == True
+
 
 elif opt.dataset_mode == "CelebaDB":
-    pass
+    
+    assert opt.images_dir is not None
+    assert opt.masks_dir is not None
+    assert opt.eval_dir is not None
+    assert opt.anno_dir is not None
+    assert opt.load_size == 256
+    assert opt.crop_size == 256
+    assert opt.label_nc == 18
+    assert opt.contain_dontcare_label == True
+    assert opt.semantic_nc == 19
+    assert opt.cache_filelist_read == False
+    assert opt.cache_filelist_write == False
+    assert opt.aspect_ratio == 1.0
+    assert opt.augment == True
 
 elif opt.dataset_mode == "CelebaMaskHQDB":
-    pass
+    
+    assert opt.images_dir is not None
+    assert opt.masks_dir is not None
+    assert opt.eval_dir is not None
+    assert opt.anno_dir is not None
+    assert opt.load_size == 256
+    assert opt.crop_size == 256
+    assert opt.label_nc == 18
+    assert opt.contain_dontcare_label == True
+    assert opt.semantic_nc == 19
+    assert opt.cache_filelist_read == False
+    assert opt.cache_filelist_write == False
+    assert opt.aspect_ratio == 1.0
+    assert opt.augment == True
 
 else:
     pass
+
+
+# Create dataloader
+dataloader = torch.utils.data.DataLoader(
+    dataset=dataset,
+    batch_size=opt.batchSize,
+    shuffle=True,
+    num_workers=int(opt.nThreads),
+    drop_last=True,
+    pin_memory=True
+)
 
 
 # create trainer for our model
