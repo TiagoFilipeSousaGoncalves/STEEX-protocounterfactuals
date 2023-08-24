@@ -11,6 +11,7 @@ import os
 import numpy as np
 import random
 from PIL import Image
+import json
 
 # PyTorch Imports
 import torch
@@ -388,6 +389,463 @@ class CustomDataset(Pix2pixDataset):
         assert len(label_paths) == len(image_paths), "The #images in %s and %s do not match. Is there something wrong?"
 
         return label_paths, image_paths, instance_paths
+
+
+
+# Class: BDDOIADB
+class BDDOIADB(Pix2pixDataset):
+    """ Dataset that loads images from directories
+        Use option --label_dir, --image_dir, --instance_dir to specify the directories.
+        The images in the directories are sorted in alphabetical order and paired in order.
+    """
+
+    @staticmethod
+    def modify_commandline_options(parser, is_train):
+        parser = Pix2pixDataset.modify_commandline_options(parser, is_train)
+        parser.set_defaults(preprocess_mode='resize_and_crop')
+        load_size = 286 if is_train else 256
+        parser.set_defaults(load_size=load_size)
+        parser.set_defaults(crop_size=256)
+        parser.set_defaults(display_winsize=256)
+        parser.set_defaults(label_nc=13)
+        parser.set_defaults(contain_dontcare_label=False)
+
+        parser.add_argument('--data_dir', type=str, required=True, help='Path to the directory that contains the images.')
+        parser.add_argument('--metadata_dir', type=str, required=True, help='Path to the directory that contains the metadata/annotations.')
+        parser.add_argument('--instance_dir', type=str, default='', help='Path to the directory that contains instance maps. Leave black if not exists.')
+        return parser
+
+
+    # Method: Get paths
+    def get_paths(self, subset):
+
+        # 25k_images data
+        train_25k_actions, val_25k_actions, test_25k_actions = self.load_25k_images_actions()
+        train_25k_reasons, val_25k_reasons, test_25k_reasons = self.load_25k_images_reasons()
+
+        # Get data splits
+        train_annotations_dict, val_annotations_dict, test_annotations_dict = self.refactor_data_dicts(
+            train_25k_actions,
+            val_25k_actions,
+            test_25k_actions,
+            train_25k_reasons,
+            val_25k_reasons,
+            test_25k_reasons
+        )
+
+        # Get masks
+        images_25k_masks = self.load_25k_images_masks()
+
+        # Get the proper subsect
+        if subset == 'train':
+            images_fnames = train_annotations_dict.keys()
+        elif subset == 'val':
+            images_fnames = val_annotations_dict.keys()
+        else:
+            images_fnames = test_annotations_dict.keys()
+        
+        # Images masks depend directly on the subset
+        images, masks = list(), list()
+
+        # Align dataset
+        for img_fname in images_fnames:
+            if img_fname in images_25k_masks:
+                images.append(img_fname)
+                masks.append(img_fname)
+
+        assert len(images) == len(masks)
+
+
+        return images, masks
+
+
+    # Method: Initialize
+    def initialize(self, opt, subset):
+
+        assert subset in ('train', 'val', 'test')
+
+        # Assign variables
+        self.data_dir = opt.data_dir
+        self.metadata_dir = opt.metadata_dir
+
+        # Get images and masks
+        self.images, self.masks = self.get_paths(subset=subset)
+
+        return
+
+
+    # Method: Load 25_images_actions
+    def load_25k_images_actions(self):
+
+        # Get JSON filenames
+        train_json = 'train_25k_images_actions.json'
+        val_json = 'val_25k_images_actions.json'
+        test_json = 'test_25k_images_actions.json'
+
+        for json_idx, json_file in enumerate([train_json, val_json, test_json]):
+            
+            # Open json file
+            j_file = open(os.path.join(self.metadata_dir, json_file))
+
+            if json_idx == 0:
+                train_25k_actions = json.load(j_file)
+                # print(train_25k_actions)
+                # print(len(train_25k_actions))
+            elif json_idx == 1:
+                val_25k_actions = json.load(j_file)
+                # print(val_25k_actions)
+                # print(len(val_25k_actions))
+            else:
+                test_25k_actions = json.load(j_file)
+                # print(test_25k_actions)
+                # print(len(test_25k_actions))
+            
+            # Close json file
+            j_file.close()
+
+        return train_25k_actions, val_25k_actions, test_25k_actions
+    
+
+    # Method: Load 25_images_reasons
+    def load_25k_images_reasons(self):
+
+        # Get JSON filenames
+        train_json = 'train_25k_images_reasons.json'
+        val_json = 'val_25k_images_reasons.json'
+        test_json = 'test_25k_images_reasons.json'
+
+        for json_idx, json_file in enumerate([train_json, val_json, test_json]):
+            
+            # Open json file
+            j_file = open(os.path.join(self.metadata_dir, json_file))
+
+            if json_idx == 0:
+                train_25k_reasons = json.load(j_file)
+                # print(train_25k_reasons)
+                # print(len(train_25k_reasons))
+            elif json_idx == 1:
+                val_25k_reasons = json.load(j_file)
+                # print(val_25k_reasons)
+                # print(len(val_25k_reasons))
+            else:
+                test_25k_reasons = json.load(j_file)
+                # print(test_25k_reasons)
+                # print(len(test_25k_reasons))
+            
+            # Close json file
+            j_file.close()
+
+        return train_25k_reasons, val_25k_reasons, test_25k_reasons
+
+
+    # Method: Refactor data dictionaries
+    def refactor_data_dicts(
+            self, 
+            train_25k_actions,
+            val_25k_actions,
+            test_25k_actions,
+            train_25k_reasons,
+            val_25k_reasons,
+            test_25k_reasons):
+
+        # Train
+        train_actions_images = train_25k_actions["images"]
+        train_actions_annotations = train_25k_actions["annotations"]
+
+        # Process the actions (categories) dict
+        train_actions_dict= dict()
+        for img_info in train_actions_images:
+            img_id = img_info['id']
+            if img_id not in train_actions_dict.keys():
+                train_actions_dict[img_id] = dict()
+                train_actions_dict[img_id]["file_name"] = img_info["file_name"]
+        for img_info in train_actions_annotations:
+            img_id = img_info['id']
+            if img_id in train_actions_dict.keys():
+                train_actions_dict[img_id]["category"] = img_info["category"]
+
+        # Process the reasons dict
+        train_annotations_dict = dict()
+        for img_info in train_25k_reasons:
+            img_fname = img_info["file_name"]
+            img_reason = img_info["reason"]
+            if img_fname not in train_annotations_dict.keys():
+                train_annotations_dict[img_fname] = dict()
+                train_annotations_dict[img_fname]["reason"] = img_reason
+
+        # Process the final annotations dictionary
+        for _, img_action_info in train_actions_dict.items():
+            img_fname = img_action_info["file_name"]
+            img_category = img_action_info["category"]
+            if img_fname in train_annotations_dict.keys():
+                train_annotations_dict[img_fname]["category"] = img_category
+
+
+        # Validation
+        val_actions_images = val_25k_actions["images"]
+        val_actions_annotations = val_25k_actions["annotations"]
+        
+        # Process the actions (categories) dict
+        val_actions_dict= dict()
+        for img_info in val_actions_images:
+            img_id = img_info['id']
+            if img_id not in val_actions_dict.keys():
+                val_actions_dict[img_id] = dict()
+                val_actions_dict[img_id]["file_name"] = img_info["file_name"]
+        for img_info in val_actions_annotations:
+            img_id = img_info['id']
+            if img_id in val_actions_dict.keys():
+                val_actions_dict[img_id]["category"] = img_info["category"]
+
+        # Process the reasons dict
+        val_annotations_dict = dict()
+        for img_info in val_25k_reasons:
+            img_fname = img_info["file_name"]
+            img_reason = img_info["reason"]
+            if img_fname not in val_annotations_dict.keys():
+                val_annotations_dict[img_fname] = dict()
+                val_annotations_dict[img_fname]["reason"] = img_reason
+        
+        # Process the final annotations dictionary
+        for _, img_action_info in val_actions_dict.items():
+            img_fname = img_action_info["file_name"]
+            img_category = img_action_info["category"]
+            if img_fname in val_annotations_dict.keys():
+                val_annotations_dict[img_fname]["category"] = img_category
+
+
+        # Test
+        test_actions_images = test_25k_actions["images"]
+        test_actions_annotations = test_25k_actions["annotations"]
+
+        # Process the actions (categories) dict
+        test_actions_dict= dict()
+        for img_info in test_actions_images:
+            img_id = img_info['id']
+            if img_id not in test_actions_dict.keys():
+                test_actions_dict[img_id] = dict()
+                test_actions_dict[img_id]["file_name"] = img_info["file_name"]
+        for img_info in test_actions_annotations:
+            img_id = img_info['id']
+            if img_id in test_actions_dict.keys():
+                test_actions_dict[img_id]["category"] = img_info["category"]
+
+        # Process the reasons dict
+        test_annotations_dict = dict()
+        for img_info in test_25k_reasons:
+            img_fname = img_info["file_name"]
+            img_reason = img_info["reason"]
+            if img_fname not in test_annotations_dict.keys():
+                test_annotations_dict[img_fname] = dict()
+                test_annotations_dict[img_fname]["reason"] = img_reason
+        
+        # Process the final annotations dictionary
+        for _, img_action_info in test_actions_dict.items():
+            img_fname = img_action_info["file_name"]
+            img_category = img_action_info["category"]
+            if img_fname in test_annotations_dict.keys():
+                test_annotations_dict[img_fname]["category"] = img_category
+
+
+        return train_annotations_dict, val_annotations_dict, test_annotations_dict
+    
+
+    # Method: Load DeepLabV3 Masks
+    def load_25k_images_masks(self):
+
+        # Read DeepLabV3 Masks directory
+        masks_dir = os.path.join(self.metadata_dir, 'deeplabv3_masks')
+        
+        # Get masks filenames
+        images_masks = [m for m in os.listdir(masks_dir) if not m.startswith('.')]
+
+        return images_masks
+    
+
+    # Method: __getitem__
+    def __getitem__(self, idx):
+        
+        # Label image (masks)
+        label_path = os.path.join(self.metadata_dir, 'deeplabv3_masks', self.masks[idx])
+        label = Image.open(label_path)
+        params = get_params(self.opt, label.size)
+        transform_label = get_transform(self.opt, params, method=Image.NEAREST, normalize=False)
+        label_tensor = transform_label(label) * 255.0
+        label_tensor[label_tensor == 255] = self.opt.label_nc  # 'unknown' is opt.label_nc
+
+        # Input image (real images)
+        image_path = os.path.join(self.data_dir, '25k_images', self.images[idx])
+        assert self.paths_match(label_path, image_path), "The label_path %s and image_path %s don't match." % (label_path, image_path)
+        image = Image.open(image_path).convert('RGB')
+
+        # Apply transforms
+        transform_image = get_transform(self.opt, params)
+        image_tensor = transform_image(image)
+
+        # if using instance maps
+        if self.opt.no_instance:
+            instance_tensor = 0
+        else:
+            instance_path = self.instance_paths[idx]
+            instance = Image.open(instance_path)
+            if instance.mode == 'L':
+                instance_tensor = transform_label(instance) * 255
+                instance_tensor = instance_tensor.long()
+            else:
+                instance_tensor = transform_label(instance)
+
+        input_dict = {'label': label_tensor,
+                      'instance': instance_tensor,
+                      'image': image_tensor,
+                      'path': image_path,
+                      }
+
+        # Give subclasses a chance to modify the final output
+        self.postprocess(input_dict)
+
+        return input_dict
+
+
+    # Method: Post-processing function
+    def postprocess(self, input_dict):
+        return input_dict
+
+
+    # Method: __len__
+    def __len__(self):
+        return len(self.images)
+
+
+    # Our codes get input images and labels
+    def get_input_by_names(self, image_path, image, label_img):
+        label = Image.fromarray(label_img)
+        params = get_params(self.opt, label.size)
+        transform_label = get_transform(self.opt, params, method=Image.NEAREST, normalize=False)
+        label_tensor = transform_label(label) * 255.0
+        label_tensor[label_tensor == 255] = self.opt.label_nc  # 'unknown' is opt.label_nc
+        label_tensor.unsqueeze_(0)
+
+
+        # input image (real images)]
+        # image = Image.open(image_path)
+        # image = image.convert('RGB')
+
+        transform_image = get_transform(self.opt, params)
+        image_tensor = transform_image(image)
+        image_tensor.unsqueeze_(0)
+
+        # if using instance maps
+        if self.opt.no_instance:
+            instance_tensor = torch.Tensor([0])
+
+        input_dict = {'label': label_tensor,
+                      'instance': instance_tensor,
+                      'image': image_tensor,
+                      'path': image_path,
+                      }
+
+        # Give subclasses a chance to modify the final output
+        self.postprocess(input_dict)
+
+        return input_dict
+
+
+
+# Class: CelebaDB
+class CelebaDB(Pix2pixDataset):
+    """ Dataset that loads images from directories
+        Use option --label_dir, --image_dir, --instance_dir to specify the directories.
+        The images in the directories are sorted in alphabetical order and paired in order.
+    """
+
+    @staticmethod
+    def modify_commandline_options(parser, is_train):
+        parser = Pix2pixDataset.modify_commandline_options(parser, is_train)
+        parser.set_defaults(preprocess_mode='resize_and_crop')
+        load_size = 286 if is_train else 256
+        parser.set_defaults(load_size=load_size)
+        parser.set_defaults(crop_size=256)
+        parser.set_defaults(display_winsize=256)
+        parser.set_defaults(label_nc=13)
+        parser.set_defaults(contain_dontcare_label=False)
+
+        parser.add_argument('--label_dir', type=str, required=True,
+                            help='path to the directory that contains label images')
+        parser.add_argument('--image_dir', type=str, required=True,
+                            help='path to the directory that contains photo images')
+        parser.add_argument('--instance_dir', type=str, default='',
+                            help='path to the directory that contains instance maps. Leave black if not exists')
+        return parser
+
+    def get_paths(self, opt):
+        label_dir = opt.label_dir
+        label_paths = make_dataset(label_dir, recursive=False, read_cache=True)
+
+        image_dir = opt.image_dir
+        image_paths = make_dataset(image_dir, recursive=False, read_cache=True)
+
+        if len(opt.instance_dir) > 0:
+            instance_dir = opt.instance_dir
+            instance_paths = make_dataset(instance_dir, recursive=False, read_cache=True)
+        else:
+            instance_paths = []
+
+        assert len(label_paths) == len(image_paths), "The #images in %s and %s do not match. Is there something wrong?"
+
+        return label_paths, image_paths, instance_paths
+    
+
+    def initialize(self, opt):
+        pass
+
+
+
+# Class: CelebaMaskHQDB
+class CelebaMaskHQDB(Pix2pixDataset):
+    """ Dataset that loads images from directories
+        Use option --label_dir, --image_dir, --instance_dir to specify the directories.
+        The images in the directories are sorted in alphabetical order and paired in order.
+    """
+
+    @staticmethod
+    def modify_commandline_options(parser, is_train):
+        parser = Pix2pixDataset.modify_commandline_options(parser, is_train)
+        parser.set_defaults(preprocess_mode='resize_and_crop')
+        load_size = 286 if is_train else 256
+        parser.set_defaults(load_size=load_size)
+        parser.set_defaults(crop_size=256)
+        parser.set_defaults(display_winsize=256)
+        parser.set_defaults(label_nc=13)
+        parser.set_defaults(contain_dontcare_label=False)
+
+        parser.add_argument('--label_dir', type=str, required=True,
+                            help='path to the directory that contains label images')
+        parser.add_argument('--image_dir', type=str, required=True,
+                            help='path to the directory that contains photo images')
+        parser.add_argument('--instance_dir', type=str, default='',
+                            help='path to the directory that contains instance maps. Leave black if not exists')
+        return parser
+
+    def get_paths(self, opt):
+        label_dir = opt.label_dir
+        label_paths = make_dataset(label_dir, recursive=False, read_cache=True)
+
+        image_dir = opt.image_dir
+        image_paths = make_dataset(image_dir, recursive=False, read_cache=True)
+
+        if len(opt.instance_dir) > 0:
+            instance_dir = opt.instance_dir
+            instance_paths = make_dataset(instance_dir, recursive=False, read_cache=True)
+        else:
+            instance_paths = []
+
+        assert len(label_paths) == len(image_paths), "The #images in %s and %s do not match. Is there something wrong?"
+
+        return label_paths, image_paths, instance_paths
+    
+
+    def initialize(self, opt):
+        pass
 
 
 
