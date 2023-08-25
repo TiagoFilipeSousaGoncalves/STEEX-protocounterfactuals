@@ -1,7 +1,7 @@
 #!/bin/bash
 #
-#SBATCH -p a100_80GB              # Partition
-#SBATCH --qos=a100                # QOS
+#SBATCH -p v100_32GB              # Partition
+#SBATCH --qos=v100                # QOS
 #SBATCH --job-name=steex_train_segmentation_model_celebamaskhq         # Job name
 #SBATCH -o slurm.%N.%j.out             # STDOUT
 #SBATCH -e slurm.%N.%j.err             # STDERR
