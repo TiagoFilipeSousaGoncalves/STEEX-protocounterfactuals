@@ -59,4 +59,7 @@ for k in range(img_num):
 
     filename_save = os.path.join(folder_save, str(k) + '.png')
     print(filename_save)
-    cv2.imwrite(filename_save, im_base)
+    
+    # FIXME: Check if multiplying by 255 solved the problem
+    # cv2.imwrite(filename_save, im_base)
+    cv2.imwrite(filename_save, im_base * 255)
