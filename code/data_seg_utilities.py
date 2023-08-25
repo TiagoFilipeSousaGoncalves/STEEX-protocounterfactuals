@@ -73,8 +73,8 @@ class BDD10kDB(torch.utils.data.Dataset):
     def load_semseg_labels(self):
 
         # Read bitmasks
-        train_masks = [b for b in os.listdir(os.path.join(self.labels_dir, "sem_seg", "masks", "train")) if not b.startswith('.')]
-        val_masks = [b for b in os.listdir(os.path.join(self.labels_dir, "sem_seg", "masks", "val")) if not b.startswith('.')]
+        train_masks = [b for b in os.listdir(os.path.join(self.labels_dir, "sem_seg", "colormaps", "train")) if not b.startswith('.')]
+        val_masks = [b for b in os.listdir(os.path.join(self.labels_dir, "sem_seg", "colormaps", "val")) if not b.startswith('.')]
 
         return train_masks, val_masks
 
@@ -139,10 +139,10 @@ class BDD10kDB(torch.utils.data.Dataset):
         # Get paths
         if self.subset == 'train':
             image_path = os.path.join(self.images_dir, "10k", "train")
-            mask_path = os.path.join(self.labels_dir, "sem_seg", "masks", "train")
+            mask_path = os.path.join(self.labels_dir, "sem_seg", "colormaps", "train")
         elif self.subset == 'val':
             image_path = os.path.join(self.images_dir, "10k", "val")
-            mask_path = os.path.join(self.labels_dir, "sem_seg", "masks", "val")
+            mask_path = os.path.join(self.labels_dir, "sem_seg", "colormaps", "val")
         else:
             pass
         
