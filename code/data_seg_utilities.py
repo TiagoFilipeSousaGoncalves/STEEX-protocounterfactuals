@@ -1,6 +1,7 @@
 # Imports
 import os
 import random
+import numpy as np
 import pandas as pd
 from PIL import Image
 
@@ -365,12 +366,16 @@ class CelebaMaskHQDB(torch.utils.data.Dataset):
                 image = transforms.functional.hflip(image)
                 mask = transforms.functional.hflip(mask)
 
-        # Convert to tensor
+        # Convert image to tensor
         image = transforms.functional.to_tensor(image)
-        mask = transforms.functional.to_tensor(mask)
         
         # Apply normalization
         image = transforms.functional.normalize(image, (0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+
+        # TODO: Convert mask to tensor w/out changing its datatype
+        # mask = transforms.functional.to_tensor(mask)
+        # mask = transforms.functional.pil_to_tensor(mask)
+        mask = torch.as_tensor(np.array(mask), dtype=torch.int64)
         
         return image, mask
 
@@ -389,6 +394,6 @@ class CelebaMaskHQDB(torch.utils.data.Dataset):
         
         # Apply augmentation
         image, mask = self.transforms(image, mask)
-        mask = mask.float()
+        # mask = mask.float()
         
         return {"image": image, "label": mask, "name": self.images[idx]}
