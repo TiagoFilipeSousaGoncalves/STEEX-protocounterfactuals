@@ -20,6 +20,7 @@ parser = argparse.ArgumentParser(description="Train the segmentation model for C
 # CLI Arguments
 parser.add_argument('--dataset_name', type=str, required=True, choices=['CelebaMaskHQDB', 'BDD10kDB'], help="The name of the database.")
 parser.add_argument('--results_dir', type=str, required=True, help="The results directory.")
+parser.add_argument('--save_dir_masks', type=str, required=True, help="The directory to save new DeepLabV3 masks.")
 parser.add_argument('--images_dir', type=str, help="Images directory (for BDD10kDB, CelebaMaskHQDB).")
 parser.add_argument('--labels_dir', type=str, help="Labels directory (for BDD10kDB).")
 parser.add_argument('--masks_dir', type=str, help="Labels directory (for CelebaMaskHQDB).")
@@ -83,7 +84,7 @@ else:
         crop_size=512,
         label_nc=19,
         contain_dontcare_label=True,
-        semantic_nc=18,
+        semantic_nc=20,
         cache_filelist_read=False,
         cache_filelist_write=False,
         aspect_ratio=2.0,
@@ -127,7 +128,7 @@ deeplabv3.eval()
 
 
 # Create directory to save masks
-save_dir_masks = os.path.join(opt.results_dir, 'masks', opt.segmentation_network_name)
+save_dir_masks = opt.save_dir_masks
 if not os.path.exists(save_dir_masks):
     os.mkdir(save_dir_masks)
 
@@ -158,4 +159,7 @@ for data in tqdm(dataloader_val):
 
         # Save masks
         cv2.imwrite(os.path.join(save_dir_masks, images_fnames[j].replace('jpg', 'png')), mask)
-        break
+
+
+
+print("Finished.")
