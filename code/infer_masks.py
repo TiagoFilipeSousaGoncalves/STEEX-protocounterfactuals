@@ -180,9 +180,10 @@ for data in tqdm(dataloader_val):
 
         # Resized images for CelebaDB
         if opt.dataset_name == 'CelebaDB':
-            mask = cv2.resize(mask, (128, 128), interpolation=cv2.INTER_AREA)
             mask = np.array(mask, dtype='uint8')
-        
+            mask = cv2.resize(mask, (128, 128), interpolation=cv2.INTER_AREA)
+
+
         # Save masks
         cv2.imwrite(os.path.join(save_dir_masks, images_fnames[j].replace('jpg', 'png')), mask)
 
