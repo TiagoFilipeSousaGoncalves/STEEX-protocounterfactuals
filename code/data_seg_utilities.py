@@ -397,3 +397,91 @@ class CelebaMaskHQDB(torch.utils.data.Dataset):
         # mask = mask.float()
         
         return {"image": image, "label": mask, "name": self.images[idx]}
+
+
+
+# Class: CelebaDB
+class CelebaDB(torch.utils.data.Dataset):
+    def __init__(self, images_dir='Img', images_subdir='img_align_celeba', eval_dir='Eval', anno_dir="Anno", subset='train', load_size=(256, 256), augment=False):
+        super(CelebaDB, self).__init__()
+
+        assert images_subdir in ('img_celeba', 'img_align_celeba', 'img_align_squared128_celeba')
+        assert subset in ('train', 'val', 'test')
+
+        # Add variables to class variables
+        self.images_dir = images_dir
+        self.images_subdir = images_subdir
+        self.eval_dir = eval_dir
+        self.anno_dir = anno_dir
+        self.load_size = load_size
+        self.augment = augment
+
+        # Data splits
+        train_set, val_set, test_set = self.load_data_splits()
+
+        # Get subset of images and attributes
+        # Images
+        if subset == 'train':
+            images_subset = train_set
+        elif subset == 'val':
+            images_subset = val_set
+        else:
+            images_subset = test_set
+
+
+        # Assign global variables
+        self.images = images_subset
+        self.subset = subset
+
+        return
+    
+
+    # Method: Load data splits
+    def load_data_splits(self):
+
+        # Read data partitions file
+        list_eval_partition = pd.read_csv(os.path.join(self.eval_dir, "list_eval_partition.txt"), delimiter=" ", header=None)
+        list_eval_partition = list_eval_partition.values
+
+        # Get train (column==0)
+        train = list_eval_partition[list_eval_partition[:,1]==0]
+        train = list(train[:, 0])
+        
+        # Get validation (column==1)
+        validation = list_eval_partition[list_eval_partition[:,1]==1]
+        validation = list(validation[:, 0])
+
+        # Get test (column==2)
+        test = list_eval_partition[list_eval_partition[:,1]==2]
+        test = list(test[:, 0])
+
+        return train, validation, test
+
+
+    # Method: Transforms
+    def transforms(self, image):
+
+        image = transforms.functional.resize(image, self.load_size, Image.BICUBIC)
+        image = transforms.functional.to_tensor(image)
+        image = transforms.functional.normalize(image, (0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+
+
+        return image
+
+
+    # Method: __len__
+    def __len__(self,):
+        return len(self.images)
+    
+
+    # Method: __getitem__
+    def __getitem__(self, idx):
+
+        # Read and load image(s)
+        image_path = os.path.join(self.images_dir, self.images_subdir)
+        image = Image.open(os.path.join(image_path, self.images[idx])).convert('RGB')
+
+        # Apply transforms
+        image = self.transforms(image)
+
+        return {"image": image, "name": self.images[idx]}

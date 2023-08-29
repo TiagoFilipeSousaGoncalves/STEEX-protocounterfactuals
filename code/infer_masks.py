@@ -10,22 +10,23 @@ import torch
 import torchvision
 
 # Project Imports
-from data_seg_utilities import BDD10kDB, CelebaMaskHQDB
+from data_seg_utilities import BDD10kDB, CelebaDB, CelebaMaskHQDB
 
 
 
 # Create CLI
-parser = argparse.ArgumentParser(description="Train the segmentation model for CelebaMaskHQDB, BDD10kDB databases.")
+parser = argparse.ArgumentParser(description="Infer masks (segmentation model) for CelebaDB, CelebaMaskHQDB, BDD10kDB databases.")
 
 # CLI Arguments
-parser.add_argument('--dataset_name', type=str, required=True, choices=['CelebaMaskHQDB', 'BDD10kDB'], help="The name of the database.")
+parser.add_argument('--dataset_name', type=str, required=True, choices=['CelebaDB', 'CelebaMaskHQDB', 'BDD10kDB'], help="The name of the database.")
 parser.add_argument('--results_dir', type=str, required=True, help="The results directory.")
 parser.add_argument('--save_dir_masks', type=str, required=True, help="The directory to save new DeepLabV3 masks.")
-parser.add_argument('--images_dir', type=str, help="Images directory (for BDD10kDB, CelebaMaskHQDB).")
+parser.add_argument('--images_dir', type=str, help="Images directory (for BDD10kDB, CelebaDB, CelebaMaskHQDB).")
+parser.add_argument('--images_subdir', type=str, help="Images subdirectory (for CelebaDB).")
 parser.add_argument('--labels_dir', type=str, help="Labels directory (for BDD10kDB).")
-parser.add_argument('--masks_dir', type=str, help="Labels directory (for CelebaMaskHQDB).")
-parser.add_argument('--eval_dir', type=str, help="Evaluation directory (for CelebaMaskHQDB).")
-parser.add_argument('--anno_dir', type=str, help="Annotation directory (for CelebaMaskHQDB).")
+parser.add_argument('--masks_dir', type=str, help="Labels directory (for CelebaDB, CelebaMaskHQDB).")
+parser.add_argument('--eval_dir', type=str, help="Evaluation directory (for CelebaDB, CelebaMaskHQDB).")
+parser.add_argument('--anno_dir', type=str, help="Annotation directory (for CelebaDB, CelebaMaskHQDB).")
 parser.add_argument('--n_classes', type=int, required=True, choices=[19, 20], help="Number of segmentation classes.")
 parser.add_argument('--pretrained', action='store_true', help="Initialize segmentation model with pretrained weights.")
 parser.add_argument('--segmentation_network_name', type=str, required=True, choices=['deeplabv3_bdd10k', 'deeplabv3_celebamaskhq'], help="The name for the segmentation network.")
@@ -38,8 +39,29 @@ opt = parser.parse_args()
 
 
 # Load datasets (and subsets)
+# CelebaDB
+if opt.dataset_name == 'CelebaDB':
+    assert opt.images_dir is not None
+    assert opt.images_subdir is not None
+    assert opt.eval_dir is not None
+    assert opt.anno_dir is not None
+    assert opt.segmentation_network_name == 'deeplabv3_celebamaskhq'
+    assert opt.n_classes == 19
+
+    # Validation
+    dataset_val = CelebaDB(
+        images_dir=opt.images_dir, 
+        images_subdir=opt.images_subdir, 
+        eval_dir=opt.eval_dir, 
+        anno_dir=opt.anno_dir, 
+        subset='val', 
+        load_size=(256, 256), 
+        augment=False
+    )
+
+
 # CelebaMaskHQDB
-if opt.dataset_name == 'CelebaMaskHQDB':
+elif opt.dataset_name == 'CelebaMaskHQDB':
     
     assert opt.images_dir is not None
     assert opt.masks_dir is not None
@@ -156,7 +178,10 @@ for data in tqdm(dataloader_val):
         mask -= 1
         # print(mask)
 
-
+        # Resized images for CelebaDB
+        if opt.dataset_name == 'CelebaDB':
+            mask = cv2.resize(mask, (128, 128), interpolation=cv2.INTER_AREA)
+        
         # Save masks
         cv2.imwrite(os.path.join(save_dir_masks, images_fnames[j].replace('jpg', 'png')), mask)
 
