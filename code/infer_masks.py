@@ -130,7 +130,7 @@ deeplabv3.eval()
 # Create directory to save masks
 save_dir_masks = opt.save_dir_masks
 if not os.path.exists(save_dir_masks):
-    os.mkdir(save_dir_masks)
+    os.makedirs(save_dir_masks)
 
 
 
@@ -148,7 +148,7 @@ for data in tqdm(dataloader_val):
     images_fnames = data['name']
 
     # Go through batch
-    for j in range(opt.batch_size):
+    for j in range(len(pred)):
 
         # Get predicted mask
         mask = np.asarray(pred_labels[j].cpu())
