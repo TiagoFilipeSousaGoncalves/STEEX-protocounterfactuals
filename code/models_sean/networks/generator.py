@@ -3,14 +3,19 @@ Copyright (C) 2019 NVIDIA Corporation.  All rights reserved.
 Licensed under the CC BY-NC-SA 4.0 license (https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode).
 """
 
+
+
+# PyTorch Imports
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from models.networks.base_network import BaseNetwork
-from models.networks.normalization import get_nonspade_norm_layer
-from models.networks.architecture import ResnetBlock as ResnetBlock
-from models.networks.architecture import SPADEResnetBlock as SPADEResnetBlock
-from models.networks.architecture import Zencoder
+
+# Project Imports
+from models_sean.networks.base_network import BaseNetwork
+from models_sean.networks.normalization import get_nonspade_norm_layer
+from models_sean.networks.architecture import ResnetBlock as ResnetBlock
+from models_sean.networks.architecture import SPADEResnetBlock as SPADEResnetBlock
+from models_sean.networks.architecture import Zencoder
 
 class SPADEGenerator(BaseNetwork):
     @staticmethod

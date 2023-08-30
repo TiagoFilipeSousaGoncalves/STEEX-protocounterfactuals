@@ -3,15 +3,21 @@ Copyright (C) 2019 NVIDIA Corporation.  All rights reserved.
 Licensed under the CC BY-NC-SA 4.0 license (https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode).
 """
 
+
+
+# Imports
+import os
+import numpy as np
 import re
+
+# PyTorch Imports
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from models.networks.sync_batchnorm import SynchronizedBatchNorm2d
 import torch.nn.utils.spectral_norm as spectral_norm
-import os
-import numpy as np
 
+# Project Imports
+from models_sean.networks.sync_batchnorm import SynchronizedBatchNorm2d
 
 
 

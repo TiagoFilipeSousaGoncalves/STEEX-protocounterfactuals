@@ -3,12 +3,18 @@ Copyright (C) 2019 NVIDIA Corporation.  All rights reserved.
 Licensed under the CC BY-NC-SA 4.0 license (https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode).
 """
 
+
+
+# PyTorch Imports
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import torchvision
 import torch.nn.utils.spectral_norm as spectral_norm
-from models.networks.normalization import SPADE, ACE
+import torchvision
+
+# Project Imports
+from models_sean.networks.normalization import SPADE, ACE
+
 
 
 # ResNet block that uses SPADE.
