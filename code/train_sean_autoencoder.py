@@ -31,8 +31,8 @@ print(' '.join(sys.argv))
 # dataloader = data.create_dataloader(opt)
 if opt.dataset_mode == "BDDOIADB":
     
-    assert opt.images_dir is not None
-    assert opt.labels_dir is not None
+    assert opt.data_dir is not None
+    assert opt.metadata_dir is not None
     assert opt.load_size == 512
     assert opt.crop_size == 512
     assert opt.label_nc == 19

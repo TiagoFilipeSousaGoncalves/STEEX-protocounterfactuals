@@ -29,7 +29,7 @@ class BaseOptions():
     def initialize(self, parser):
         
         # Experiment specifics
-        parser.add_argument('--name', type=str, default='label2coco', help='name of the experiment. It decides where to store samples and models')
+        parser.add_argument('--name', type=str, required=True, help='name of the experiment. It decides where to store samples and models')
 
         parser.add_argument('--gpu_ids', type=str, default='0', help='gpu ids: e.g. 0  0,1,2, 0,2. use -1 for CPU')
         parser.add_argument('--checkpoints_dir', type=str, default='./checkpoints', help='models are saved here')
@@ -45,15 +45,18 @@ class BaseOptions():
         parser.add_argument('--load_size', type=int, default=1024, help='Scale images to this size. The final image will be cropped to --crop_size.')
         parser.add_argument('--crop_size', type=int, default=512, help='Crop to the width of crop_size (after initially scaling the images to load_size.)')
         parser.add_argument('--aspect_ratio', type=float, default=1.0, help='The ratio width/height. The final height of the load image will be crop_size/aspect_ratio')
-        parser.add_argument('--label_nc', type=int, default=182, help='# of input label classes without unknown class. If you have unknown class as class label, specify --contain_dopntcare_label.')
+        parser.add_argument('--label_nc', type=int, required=True, help='# of input label classes without unknown class. If you have unknown class as class label, specify --contain_dopntcare_label.')
+        parser.add_argument('--semantic_nc', type=int, required=True, help="The total number of labels (semantic labels + unknown).")
         parser.add_argument('--contain_dontcare_label', action='store_true', help='if the label map contains dontcare label (dontcare=255)')
         parser.add_argument('--output_nc', type=int, default=3, help='# of output image channels')
 
         # For setting inputs
-        parser.add_argument('--dataroot', type=str, default='./datasets/cityscapes/')
+        parser.add_argument('--dataroot', type=str, help="Data directory for the databases of the original paper.")
         parser.add_argument('--dataset_mode', type=str, default='coco')
 
         # For datasets
+        parser.add_argument('--data_dir', type=str, help='Path to the directory that contains the images (for BDDOIADB).')
+        parser.add_argument('--metadata_dir', type=str, help='Path to the directory that contains the metadata/annotations (for BDDOIADB).')
         parser.add_argument('--images_dir', type=str, help="The directory of the images (for BDDOIADB, CelebaDB, CelebaMaskHQDB).")
         parser.add_argument('--labels_dir', type=str, help="The directory of the labels (for BDDOIADB).")
         parser.add_argument('--masks_dir', type=str, help="The directory of the masks (for CelebaDB, CelebaMaskHQDB).")
@@ -61,7 +64,7 @@ class BaseOptions():
         parser.add_argument('--anno_dir', type=str, help="The directory of the annotations (for CelebaDB, CelebaMaskHQDB).")
 
         parser.add_argument('--serial_batches', action='store_true', help='if true, takes images in order to make batches, otherwise takes them randomly')
-        parser.add_argument('--no_flip', action='store_true', help='if specified, do not flip the images for data argumentation')
+        parser.add_argument('--no_flip', action='store_true', help='if specified, do not flip the images for data augmentation')
         parser.add_argument('--nThreads', default=28, type=int, help='# threads for loading data')
         parser.add_argument('--max_dataset_size', type=int, default=sys.maxsize, help='Maximum number of samples allowed per dataset. If the dataset directory contains more than max_dataset_size, only a subset is loaded.')
         parser.add_argument('--load_from_opt_file', action='store_true', help='load the options from checkpoints and use that as default')
@@ -76,8 +79,7 @@ class BaseOptions():
         parser.add_argument('--ngf', type=int, default=64, help='# of gen filters in first conv layer')
         parser.add_argument('--init_type', type=str, default='xavier', help='network initialization [normal|xavier|kaiming|orthogonal]')
         parser.add_argument('--init_variance', type=float, default=0.02, help='variance of the initialization distribution')
-        parser.add_argument('--z_dim', type=int, default=256,
-                            help="dimension of the latent z vector")
+        parser.add_argument('--z_dim', type=int, default=256, help="dimension of the latent z vector")
 
         # For instance-wise features
         parser.add_argument('--no_instance', action='store_true', help='if specified, do *not* add instance map as input')
@@ -222,6 +224,7 @@ class TrainOptions(BaseOptions):
         parser.add_argument('--beta2', type=float, default=0.999, help='momentum term of adam')
         parser.add_argument('--lr', type=float, default=0.0002, help='initial learning rate for adam')
         parser.add_argument('--D_steps_per_G', type=int, default=1, help='number of discriminator iterations per generator iterations.')
+        parser.add_argument('--augment', action="store_true", help="Activate data augmentation pipeline.")
 
         # for discriminators
         parser.add_argument('--ndf', type=int, default=64, help='# of discrim filters in first conv layer')

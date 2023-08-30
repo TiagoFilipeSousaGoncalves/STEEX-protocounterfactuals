@@ -411,9 +411,11 @@ class BDDOIADB(Pix2pixDataset):
         parser.set_defaults(label_nc=13)
         parser.set_defaults(contain_dontcare_label=False)
 
-        parser.add_argument('--data_dir', type=str, required=True, help='Path to the directory that contains the images.')
-        parser.add_argument('--metadata_dir', type=str, required=True, help='Path to the directory that contains the metadata/annotations.')
+        # TODO: Additional CLI option
+        # parser.add_argument('--data_dir', type=str, required=True, help='Path to the directory that contains the images.')
+        # parser.add_argument('--metadata_dir', type=str, required=True, help='Path to the directory that contains the metadata/annotations.')
         parser.add_argument('--instance_dir', type=str, default='', help='Path to the directory that contains instance maps. Leave black if not exists.')
+        
         return parser
 
 
