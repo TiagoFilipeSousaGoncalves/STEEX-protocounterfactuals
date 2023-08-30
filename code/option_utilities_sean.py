@@ -104,10 +104,11 @@ class BaseOptions():
         model_option_setter = models.get_option_setter(model_name)
         parser = model_option_setter(parser, self.isTrain)
 
-        # modify dataset-related parser options
+        # FIXME: Change this to our notation 
+        # Modify dataset-related parser options
         dataset_mode = opt.dataset_mode
-        dataset_option_setter = data.get_option_setter(dataset_mode)
-        parser = dataset_option_setter(parser, self.isTrain)
+        # dataset_option_setter = data.get_option_setter(dataset_mode)
+        # parser = dataset_option_setter(parser, self.isTrain)
 
         opt, unknown = parser.parse_known_args()
 
