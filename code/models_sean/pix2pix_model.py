@@ -3,11 +3,18 @@ Copyright (C) 2019 NVIDIA Corporation.  All rights reserved.
 Licensed under the CC BY-NC-SA 4.0 license (https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode).
 """
 
+
+
+# PyTorch Imports
 import torch
-import models.networks as networks
-import util.util as util
+
+# Project Imports
+import misc_utilities_sean as util
+import models_sean.networks as networks
 
 
+
+# Class: Pix2PixModel
 class Pix2PixModel(torch.nn.Module):
     @staticmethod
     def modify_commandline_options(parser, is_train):
