@@ -3,10 +3,15 @@ Copyright (C) 2019 NVIDIA Corporation.  All rights reserved.
 Licensed under the CC BY-NC-SA 4.0 license (https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode).
 """
 
-from models.networks.sync_batchnorm import DataParallelWithCallback
-from models.pix2pix_model import Pix2PixModel
 
 
+# Project Imports
+from models_sean.networks.sync_batchnorm import DataParallelWithCallback
+from models_sean.pix2pix_model import Pix2PixModel
+
+
+
+# Class: Pix2PixTrainer
 class Pix2PixTrainer():
     """
     Trainer creates the model and optimizers, and uses them to
