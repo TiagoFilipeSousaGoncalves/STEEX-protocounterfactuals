@@ -157,7 +157,7 @@ deeplabv3 = torchvision.models.segmentation.deeplabv3_resnet101(pretrained=opt.p
 
 # Get checkpoint
 checkpoints_dir = os.path.join(opt.results_dir, 'checkpoints', opt.segmentation_network_name)
-checkpoint = torch.load(os.path.join(checkpoints_dir, 'checkpoint.pt'))
+checkpoint = torch.load(os.path.join(checkpoints_dir, 'checkpoint.pt'), map_location=device)
 
 # Load checkpoint
 deeplabv3.load_state_dict(checkpoint['model_state_dict'])
