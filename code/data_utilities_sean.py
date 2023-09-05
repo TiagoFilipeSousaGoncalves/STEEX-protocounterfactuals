@@ -437,7 +437,7 @@ class BDDOIADB(Pix2pixDataset):
         )
 
         # Get masks
-        images_25k_masks = self.load_25k_images_masks()
+        images_25k_masks = self.load_25k_images_masks(subset=subset)
 
         # Get the proper subsect
         if subset == 'train':
@@ -654,10 +654,10 @@ class BDDOIADB(Pix2pixDataset):
     
 
     # Method: Load DeepLabV3 Masks
-    def load_25k_images_masks(self):
+    def load_25k_images_masks(self, subset):
 
         # Read DeepLabV3 Masks directory
-        masks_dir = os.path.join(self.metadata_dir, 'deeplabv3_masks')
+        masks_dir = os.path.join(self.masks_dir, subset)
         
         # Get masks filenames
         images_masks = [m for m in os.listdir(masks_dir) if not m.startswith('.')]
