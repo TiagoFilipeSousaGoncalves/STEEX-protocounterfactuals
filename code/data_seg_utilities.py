@@ -437,7 +437,7 @@ class BDDOIADB(torch.utils.data.Dataset):
         # Apply transforms
         image = self.transforms(image)
         
-        return {"image": image, "name": self.images[idx]}
+        return {"image": image, "name": self.images_fnames[idx]}
 
 
 
