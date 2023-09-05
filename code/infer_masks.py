@@ -34,6 +34,7 @@ parser.add_argument('--pretrained', action='store_true', help="Initialize segmen
 parser.add_argument('--segmentation_network_name', type=str, required=True, choices=['deeplabv3_bdd10k', 'deeplabv3_celebamaskhq'], help="The name for the segmentation network.")
 parser.add_argument('--seed', type=int, default=42, required=True, help="Seed for random purposes (to ensure reproducibility).")
 parser.add_argument('--batch_size', type=int, default=8, required=True, help="Batch size for the dataloaders.")
+parser.add_argument('--subset', type=str, choices=['train', 'val', 'test'], required=True, help="The data subset (train, val or test).")
 
 # Get argument values
 opt = parser.parse_args()
@@ -56,7 +57,7 @@ if opt.dataset_name == 'CelebaDB':
         images_subdir=opt.images_subdir, 
         eval_dir=opt.eval_dir, 
         anno_dir=opt.anno_dir, 
-        subset='val', 
+        subset=opt.subset, 
         load_size=(256, 256), 
         augment=False
     )
@@ -78,7 +79,7 @@ elif opt.dataset_name == 'CelebaMaskHQDB':
         masks_dir=opt.masks_dir,
         eval_dir=opt.eval_dir,
         anno_dir=opt.anno_dir,
-        subset='val',
+        subset=opt.subset,
         load_size=256,
         crop_size=256,
         label_nc=18,
@@ -103,7 +104,7 @@ elif opt.dataset_name == 'BDD10kDB':
     dataset_val = BDD10kDB(
         images_dir=opt.images_dir,
         labels_dir=opt.labels_dir,
-        subset='val',
+        subset=opt.subset,
         load_size=512,
         crop_size=512,
         label_nc=19,
@@ -127,7 +128,7 @@ else:
     dataset_val = BDDOIADB(
         data_dir=opt.data_dir,
         metadata_dir=opt.metadata_dir,
-        subset='val',
+        subset=opt.subset,
         load_size=512,
         crop_size=512,
         label_nc=19,
