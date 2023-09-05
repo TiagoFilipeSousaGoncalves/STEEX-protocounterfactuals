@@ -1,7 +1,7 @@
 #!/bin/bash
 #
-#SBATCH -p a100_80GB              # Partition
-#SBATCH --qos=a100                # QOS
+#SBATCH -p gtx1080ti_11GB              # Partition
+#SBATCH --qos=gtx1080ti                # QOS
 #SBATCH --job-name=steex_infer_masks_celeba         # Job name
 #SBATCH -o slurm.%N.%j.out             # STDOUT
 #SBATCH -e slurm.%N.%j.err             # STDERR
