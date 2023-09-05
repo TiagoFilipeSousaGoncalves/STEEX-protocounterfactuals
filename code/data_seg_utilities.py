@@ -424,7 +424,7 @@ class BDDOIADB(torch.utils.data.Dataset):
 
     # Method: __len__
     def __len__(self,):
-        return len(self.images)
+        return len(self.images_fnames)
 
 
     # Method: __getitem__
