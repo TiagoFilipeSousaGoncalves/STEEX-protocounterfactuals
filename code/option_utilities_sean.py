@@ -59,7 +59,7 @@ class BaseOptions():
         parser.add_argument('--metadata_dir', type=str, help='Path to the directory that contains the metadata/annotations (for BDDOIADB).')
         parser.add_argument('--images_dir', type=str, help="The directory of the images (for BDDOIADB, CelebaDB, CelebaMaskHQDB).")
         parser.add_argument('--labels_dir', type=str, help="The directory of the labels (for BDDOIADB).")
-        parser.add_argument('--masks_dir', type=str, help="The directory of the masks (for CelebaDB, CelebaMaskHQDB).")
+        parser.add_argument('--masks_dir', type=str, help="The directory of the masks (for BDDOIADB, CelebaDB, CelebaMaskHQDB).")
         parser.add_argument('--eval_dir', type=str, help="The directory of the data splits (for CelebaDB, CelebaMaskHQDB).")
         parser.add_argument('--anno_dir', type=str, help="The directory of the annotations (for CelebaDB, CelebaMaskHQDB).")
 
