@@ -676,7 +676,7 @@ class BDDOIADB(Pix2pixDataset):
     def __getitem__(self, idx):
         
         # Label image (masks)
-        label_path = os.path.join(self.metadata_dir, 'deeplabv3_masks', self.masks[idx])
+        label_path = os.path.join(self.masks_dir, self.subset, self.masks[idx])
         label = Image.open(label_path)
         params = get_params(self.opt, label.size)
         transform_label = get_transform(self.opt, params, method=Image.NEAREST, normalize=False)
