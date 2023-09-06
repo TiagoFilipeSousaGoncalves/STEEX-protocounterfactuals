@@ -476,7 +476,10 @@ class BDDOIADB(Pix2pixDataset):
 
         # Get images and masks
         self.images, self.masks = self.get_paths()
-        print(len(self.images), len(self.masks))
+        # print(len(self.images), len(self.masks))
+
+        # Get dataset size
+        self.dataset_size = len(self.images)
 
         return
 
@@ -720,7 +723,8 @@ class BDDOIADB(Pix2pixDataset):
 
     # Method: __len__
     def __len__(self):
-        return len(self.images)
+        self.dataset_size = len(self.images)
+        return self.dataset_size
 
 
     # Our codes get input images and labels
