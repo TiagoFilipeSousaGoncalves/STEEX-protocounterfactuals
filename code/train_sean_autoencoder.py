@@ -33,8 +33,8 @@ if opt.dataset_mode == "BDDOIADB":
     
     assert opt.data_dir is not None
     assert opt.metadata_dir is not None
-    assert opt.load_size == 512
-    assert opt.crop_size == 512
+    assert opt.load_size == 286
+    assert opt.crop_size == 256
     assert opt.label_nc == 19
     assert opt.contain_dontcare_label == True
     assert opt.semantic_nc == 20
