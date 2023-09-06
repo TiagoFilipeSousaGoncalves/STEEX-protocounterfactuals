@@ -420,7 +420,7 @@ class BDDOIADB(Pix2pixDataset):
 
 
     # Method: Get paths
-    def get_paths(self, subset):
+    def get_paths(self):
 
         # 25k_images data
         train_25k_actions, val_25k_actions, test_25k_actions = self.load_25k_images_actions()
@@ -440,9 +440,9 @@ class BDDOIADB(Pix2pixDataset):
         images_25k_masks = self.load_25k_images_masks()
 
         # Get the proper subsect
-        if subset == 'train':
+        if self.subset == 'train':
             images_fnames = train_annotations_dict.keys()
-        elif subset == 'val':
+        elif self.subset == 'val':
             images_fnames = val_annotations_dict.keys()
         else:
             images_fnames = test_annotations_dict.keys()
@@ -452,9 +452,10 @@ class BDDOIADB(Pix2pixDataset):
 
         # Align dataset
         for img_fname in images_fnames:
-            if img_fname in images_25k_masks:
+            mask_fname = img_fname.replace('jpg', 'png')
+            if mask_fname in images_25k_masks:
                 images.append(img_fname)
-                masks.append(img_fname)
+                masks.append(mask_fname)
 
         assert len(images) == len(masks)
 
@@ -471,6 +472,7 @@ class BDDOIADB(Pix2pixDataset):
         self.data_dir = opt.data_dir
         self.metadata_dir = opt.metadata_dir
         self.masks_dir = opt.masks_dir
+        self.subset = subset
 
         # Get images and masks
         self.images, self.masks = self.get_paths(subset=subset)
@@ -659,7 +661,7 @@ class BDDOIADB(Pix2pixDataset):
     def load_25k_images_masks(self):
 
         # Read DeepLabV3 Masks directory
-        masks_dir = os.path.join(self.masks_dir)
+        masks_dir = os.path.join(self.masks_dir, self.subset)
         
         # Get masks filenames
         images_masks = [m for m in os.listdir(masks_dir) if not m.startswith('.')]
