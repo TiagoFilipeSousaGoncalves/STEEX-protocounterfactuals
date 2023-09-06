@@ -437,7 +437,7 @@ class BDDOIADB(Pix2pixDataset):
         )
 
         # Get masks
-        images_25k_masks = self.load_25k_images_masks(subset=subset)
+        images_25k_masks = self.load_25k_images_masks()
 
         # Get the proper subsect
         if subset == 'train':
