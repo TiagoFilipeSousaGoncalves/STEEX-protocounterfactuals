@@ -127,15 +127,16 @@ for epoch in iter_counter.training_epochs():
         # Visualizations
         if iter_counter.needs_printing():
             losses = trainer.get_latest_losses()
-            visualizer.print_current_errors(epoch, iter_counter.epoch_iter,
-                                            losses, iter_counter.time_per_iter)
+            visualizer.print_current_errors(epoch, iter_counter.epoch_iter, losses, iter_counter.time_per_iter)
             visualizer.plot_current_errors(losses, iter_counter.total_steps_so_far)
 
-        if iter_counter.needs_displaying():
-            visuals = OrderedDict([('input_label', data_i['label']),
-                                   ('synthesized_image', trainer.get_latest_generated()),
-                                   ('real_image', data_i['image'])])
-            visualizer.display_current_results(visuals, epoch, iter_counter.total_steps_so_far)
+
+        # TODO: Remove visualization mode from this framework
+        # if iter_counter.needs_displaying():
+        #     visuals = OrderedDict([('input_label', data_i['label']),
+        #                            ('synthesized_image', trainer.get_latest_generated()),
+        #                            ('real_image', data_i['image'])])
+        #     visualizer.display_current_results(visuals, epoch, iter_counter.total_steps_so_far)
 
         if iter_counter.needs_saving():
             print('saving the latest model (epoch %d, total_steps %d)' %
