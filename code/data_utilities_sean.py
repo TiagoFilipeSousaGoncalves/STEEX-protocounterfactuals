@@ -775,25 +775,27 @@ class CelebaDB(Pix2pixDataset):
     @staticmethod
     def modify_commandline_options(parser, is_train):
         parser = Pix2pixDataset.modify_commandline_options(parser, is_train)
-        parser.set_defaults(preprocess_mode='resize_and_crop')
-        load_size = 286 if is_train else 256
-        parser.set_defaults(load_size=load_size)
-        parser.set_defaults(crop_size=256)
-        parser.set_defaults(display_winsize=256)
-        parser.set_defaults(label_nc=13)
-        parser.set_defaults(contain_dontcare_label=False)
+        
+        # TODO: Remove uppon testing
+        # parser.set_defaults(preprocess_mode='resize_and_crop')
+        # load_size = 286 if is_train else 256
+        # parser.set_defaults(load_size=load_size)
+        # parser.set_defaults(crop_size=256)
+        # parser.set_defaults(display_winsize=256)
+        # parser.set_defaults(label_nc=13)
+        # parser.set_defaults(contain_dontcare_label=False)
 
-        # Additional arguments for CelebaDB
-        parser.add_argument('--images_dir', type=str, required=True, help="Path to the directory that contains the images.")
-        parser.add_argument('--images_subdir', type=str, required=True, help="Path to the sub-directory that contains the images.")
-        parser.add_argument('--eval_dir', type=str, required=True, help="Path to the directory that contains the data splits.")
-        parser.add_argument('--anno_dir', type=str, required=True, help="Path to the directory that contains the annotations.")
+        # # Additional arguments for CelebaDB
+        # parser.add_argument('--images_dir', type=str, required=True, help="Path to the directory that contains the images.")
+        # parser.add_argument('--images_subdir', type=str, required=True, help="Path to the sub-directory that contains the images.")
+        # parser.add_argument('--eval_dir', type=str, required=True, help="Path to the directory that contains the data splits.")
+        # parser.add_argument('--anno_dir', type=str, required=True, help="Path to the directory that contains the annotations.")
         
         return parser
 
 
     # Method: Get data paths
-    def get_paths(self, subset):
+    def get_paths(self):
 
         # Data splits
         train_set, val_set, test_set = self.load_data_splits()
@@ -803,9 +805,9 @@ class CelebaDB(Pix2pixDataset):
 
         # Get subset of images and attributes
         # Images
-        if subset == 'train':
+        if self.subset == 'train':
             images_subset = train_set
-        elif subset == 'val':
+        elif self.subset == 'val':
             images_subset = val_set
         else:
             images_subset = test_set
@@ -814,9 +816,10 @@ class CelebaDB(Pix2pixDataset):
         # Align data (depends on the subset)
         images, masks = list(), list()
         for image_fname in images_subset:
-            if image_fname in deeplabv3_masks:
+            mask_fname = image_fname.replace("jpg", "png")
+            if mask_fname in deeplabv3_masks:
                 images.append(image_fname)
-                masks.append(image_fname)
+                masks.append(mask_fname)
         
         assert len(images) == len(masks)
 
@@ -834,12 +837,14 @@ class CelebaDB(Pix2pixDataset):
         self.images_subdir = opt.images_subdir
         self.eval_dir = opt.eval_dir
         self.anno_dir = opt.anno_dir
+        self.masks_dir = opt.masks_dir
         self.load_size = opt.load_size
-        self.augment = augment
+        self.augment = opt.augment
         self.subset = subset
+        self.opt = opt
 
         # Get data
-        self.images, self.masks = self.get_paths(subset=subset)
+        self.images, self.masks = self.get_paths()
 
         return
     
@@ -870,36 +875,31 @@ class CelebaDB(Pix2pixDataset):
     def load_deeplabv3_masks(self):
 
         # Get the path of the masks
-        masks_path = os.path.join(self.anno_dir, 'deeplabv3_masks')
+        masks_path = os.path.join(self.masks_dir)
         masks = [m for m in os.listdir(masks_path) if not m.startswith('.')]
 
         return masks
-    
-
-    # Method: Check if paths match
-    def paths_match(self, path1, path2):
-        filename1_without_ext = os.path.splitext(os.path.basename(path1))[0]
-        filename2_without_ext = os.path.splitext(os.path.basename(path2))[0]
-        return filename1_without_ext == filename2_without_ext
 
 
     # Method: __getitem__
     def __getitem__(self, idx):
 
+        # Image(s)
+        image_path = os.path.join(self.images_dir, self.images_subdir, self.images[idx])
+        image = Image.open(image_path).convert('RGB')
+        transform_image = get_transform(self.opt, params)
+        image_tensor = transform_image(image)
+
+
         # Label(s) (mask(s) of the image(s))
-        label_path = os.path.join(self.anno_dir, 'deeplabv3_masks', self.masks[idx])
+        label_path = os.path.join(self.masks_dir, self.masks[idx])
         label = Image.open(label_path)
         params = get_params(self.opt, label.size)
         transform_label = get_transform(self.opt, params, method=Image.NEAREST, normalize=False)
         label_tensor = transform_label(label) * 255.0
         label_tensor[label_tensor == 255] = self.opt.label_nc  # 'unknown' is opt.label_nc
 
-        # Image(s)
-        image_path = os.path.join(self.images_dir, self.images_subdir, self.images[idx])
-        assert self.paths_match(label_path, image_path), "The label_path %s and image_path %s don't match." % (label_path, image_path)
-        image = Image.open(image_path).convert('RGB')
-        transform_image = get_transform(self.opt, params)
-        image_tensor = transform_image(image)
+        
 
         # if using instance maps
         if self.opt.no_instance:
@@ -932,7 +932,8 @@ class CelebaDB(Pix2pixDataset):
 
     # Method: __len__
     def __len__(self):
-        return len(self.images)
+        self.dataset_size = len(self.images)
+        return self.dataset_size
 
 
     # Our codes get input images and labels

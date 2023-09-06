@@ -51,6 +51,7 @@ if opt.dataset_mode == "BDDOIADB":
 elif opt.dataset_mode == "CelebaDB":
     
     assert opt.images_dir is not None
+    assert opt.images_subdir is not None
     assert opt.masks_dir is not None
     assert opt.eval_dir is not None
     assert opt.anno_dir is not None
@@ -139,18 +140,15 @@ for epoch in iter_counter.training_epochs():
         #     visualizer.display_current_results(visuals, epoch, iter_counter.total_steps_so_far)
 
         if iter_counter.needs_saving():
-            print('saving the latest model (epoch %d, total_steps %d)' %
-                  (epoch, iter_counter.total_steps_so_far))
+            print('saving the latest model (epoch %d, total_steps %d)' % (epoch, iter_counter.total_steps_so_far))
             trainer.save('latest')
             iter_counter.record_current_iter()
 
     trainer.update_learning_rate(epoch)
     iter_counter.record_epoch_end()
 
-    if epoch % opt.save_epoch_freq == 0 or \
-       epoch == iter_counter.total_epochs:
-        print('saving the model at the end of epoch %d, iters %d' %
-              (epoch, iter_counter.total_steps_so_far))
+    if epoch % opt.save_epoch_freq == 0 or epoch == iter_counter.total_epochs:
+        print('saving the model at the end of epoch %d, iters %d' % (epoch, iter_counter.total_steps_so_far))
         trainer.save('latest')
         trainer.save(epoch)
 
