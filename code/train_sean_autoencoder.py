@@ -43,7 +43,8 @@ if opt.dataset_mode == "BDDOIADB":
     assert opt.aspect_ratio == 2.0
     assert opt.augment == True
 
-    dataset = BDDOIADB().initialize(opt=opt, subset='train')
+    dataset = BDDOIADB()
+    dataset.initialize(opt=opt, subset='train')
 
 
 elif opt.dataset_mode == "CelebaDB":
@@ -62,7 +63,8 @@ elif opt.dataset_mode == "CelebaDB":
     assert opt.aspect_ratio == 1.0
     assert opt.augment == True
 
-    dataset = CelebaDB().initialize(opt=opt, subset='train')
+    dataset = CelebaDB()
+    dataset.initialize(opt=opt, subset='train')
 
 
 elif opt.dataset_mode == "CelebaMaskHQDB":
@@ -81,7 +83,8 @@ elif opt.dataset_mode == "CelebaMaskHQDB":
     assert opt.aspect_ratio == 1.0
     assert opt.augment == True
 
-    dataset = CelebaMaskHQDB().initialize(opt=opt, subset='train')
+    dataset = CelebaMaskHQDB()
+    dataset.initialize(opt=opt, subset='train')
 
 else:
     pass
