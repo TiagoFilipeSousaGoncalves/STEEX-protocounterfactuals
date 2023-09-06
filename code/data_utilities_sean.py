@@ -655,10 +655,10 @@ class BDDOIADB(Pix2pixDataset):
     
 
     # Method: Load DeepLabV3 Masks
-    def load_25k_images_masks(self, subset):
+    def load_25k_images_masks(self):
 
         # Read DeepLabV3 Masks directory
-        masks_dir = os.path.join(self.masks_dir, subset)
+        masks_dir = os.path.join(self.masks_dir)
         
         # Get masks filenames
         images_masks = [m for m in os.listdir(masks_dir) if not m.startswith('.')]
