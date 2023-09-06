@@ -1,7 +1,7 @@
 #!/bin/bash
 #
-#SBATCH -p v100_32GB              # Partition
-#SBATCH --qos=v100                # QOS
+#SBATCH -p debug              # Partition
+#SBATCH --qos=debug                # QOS
 #SBATCH --job-name=steex_train_sean_autoencoder_celebamaskhq         # Job name
 #SBATCH -o slurm.%N.%j.out             # STDOUT
 #SBATCH -e slurm.%N.%j.err             # STDERR
