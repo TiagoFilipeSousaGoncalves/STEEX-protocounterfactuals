@@ -473,6 +473,7 @@ class BDDOIADB(Pix2pixDataset):
         self.metadata_dir = opt.metadata_dir
         self.masks_dir = opt.masks_dir
         self.subset = subset
+        self.opt = opt
 
         # Get images and masks
         self.images, self.masks = self.get_paths()
