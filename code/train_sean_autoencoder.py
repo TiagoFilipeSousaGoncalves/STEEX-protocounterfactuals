@@ -41,7 +41,7 @@ if opt.dataset_mode == "BDDOIADB":
     assert opt.semantic_nc == 20
     assert opt.cache_filelist_read == False
     assert opt.cache_filelist_write == False
-    assert opt.aspect_ratio == 2.0
+    assert opt.aspect_ratio == 1.0
     assert opt.augment == True
 
     dataset = BDDOIADB()
