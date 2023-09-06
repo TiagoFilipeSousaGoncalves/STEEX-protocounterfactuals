@@ -475,7 +475,7 @@ class BDDOIADB(Pix2pixDataset):
         self.subset = subset
 
         # Get images and masks
-        self.images, self.masks = self.get_paths(subset=subset)
+        self.images, self.masks = self.get_paths()
         print(len(self.images), len(self.masks))
 
         return
