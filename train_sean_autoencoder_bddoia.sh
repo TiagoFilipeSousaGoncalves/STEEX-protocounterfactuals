@@ -1,7 +1,7 @@
 #!/bin/bash
 #
-#SBATCH -p gtx1080_8GB              # Partition
-#SBATCH --qos=gtx1080                # QOS
+#SBATCH -p debug              # Partition
+#SBATCH --qos=debug                # QOS
 #SBATCH --job-name=steex_train_sean_autoencoder_bddoia         # Job name
 #SBATCH -o slurm.%N.%j.out             # STDOUT
 #SBATCH -e slurm.%N.%j.err             # STDERR
