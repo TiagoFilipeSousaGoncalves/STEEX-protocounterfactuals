@@ -84,7 +84,7 @@ images_val   = "/path/to/dataset/BDD/bdd100k/seg/images/val"
 ## Train decision models
 For CelebaDB and CelebaMaskHQDB, train the respective decision models (densenet) with the command below. Please, precise the data path `<data_dir>` and the checkpoint directory `<checkpoints_dir>`. To choose between CelabA and CelebAMask-HQ, simply toggle the commented code block on the top in the Args class.
 
-### Training arguments for CelebaDB (from the original paper)
+### Training arguments for CelebaDB (all from the original paper, except for number of epochs)
 ```text
 dataset_name='CelebaDB'
 results_dir='/nas-ctm01/homes/tgoncalv/STEEX-protocounterfactuals/results'
@@ -100,10 +100,10 @@ optimizer='Adam'
 lr=0.0001
 step_size=10
 gamma_scheduler=0.5
-num_epochs=5
+num_epochs=10
 ```
 
-### Training arguments for CelebaMaskHQDB (from the original paper)
+### Training arguments for CelebaMaskHQDB (from the original paper, except for number of epochs)
 ```text
 dataset_name='CelebaMaskHQDB'
 results_dir='/nas-ctm01/homes/tgoncalv/STEEX-protocounterfactuals/results'
@@ -118,10 +118,10 @@ optimizer='Adam'
 lr=0.0001
 step_size=10
 gamma_scheduler=0.5
-num_epochs=5
+num_epochs=10
 ```
 
-### Training arguments for BDDOIADB
+### Training arguments for BDDOIADB (from the original paper, except for number of epochs)
 ```text
 dataset_name='BDDOIADB'
 results_dir='/nas-ctm01/homes/tgoncalv/STEEX-protocounterfactuals/results'
@@ -133,7 +133,7 @@ train_attributes_idx=[0, 1, 2, 3]
 batch_size=8
 optimizer='Adam'
 lr=0.0001
-num_epochs=5
+num_epochs=10
 ```
 
 

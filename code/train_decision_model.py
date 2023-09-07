@@ -159,7 +159,7 @@ if opt.dataset_name in ('CelebaDB', 'CelebaMaskHQDB'):
 checkpoints_dir = os.path.join(opt.results_dir, 'checkpoints', opt.decision_model_name)
 if not os.path.exists(checkpoints_dir):
     os.makedirs(checkpoints_dir)
-print(checkpoints_dir)
+# print(checkpoints_dir)
 
 
 # Save training parameters
@@ -203,3 +203,7 @@ for epoch in range(opt.num_epochs):
     # Update scheduler (for CelebaDB, CelebaMaskHQDB)
     if opt.dataset_name in ('CelebaDB', 'CelebaMaskHQDB'):
         scheduler.step()
+
+
+
+print("Finished.")
