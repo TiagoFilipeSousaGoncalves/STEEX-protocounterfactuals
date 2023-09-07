@@ -678,7 +678,14 @@ class BDDOIADB(Pix2pixDataset):
     # Method: __getitem__
     def __getitem__(self, idx):
         
-        # Label image (masks)
+        # Read, load and transform images
+        image_path = os.path.join(self.data_dir, '25k_images', self.images[idx])
+        image = Image.open(image_path).convert('RGB')
+        params = get_params(self.opt, image.size)
+        transform_image = get_transform(self.opt, params)
+        image_tensor = transform_image(image)
+
+        # Read, load and transform labels/masks
         label_path = os.path.join(self.masks_dir, self.subset, self.masks[idx])
         label = Image.open(label_path)
         params = get_params(self.opt, label.size)
@@ -686,15 +693,7 @@ class BDDOIADB(Pix2pixDataset):
         label_tensor = transform_label(label) * 255.0
         label_tensor[label_tensor == 255] = self.opt.label_nc  # 'unknown' is opt.label_nc
 
-        # Input image (real images)
-        image_path = os.path.join(self.data_dir, '25k_images', self.images[idx])
-        assert self.paths_match(label_path, image_path), "The label_path %s and image_path %s don't match." % (label_path, image_path)
-        image = Image.open(image_path).convert('RGB')
-
-        # Apply transforms
-        transform_image = get_transform(self.opt, params)
-        image_tensor = transform_image(image)
-
+        
         # if using instance maps
         if self.opt.no_instance:
             instance_tensor = 0
@@ -884,14 +883,15 @@ class CelebaDB(Pix2pixDataset):
     # Method: __getitem__
     def __getitem__(self, idx):
 
-        # Image(s)
+        # Read, load and transform images
         image_path = os.path.join(self.images_dir, self.images_subdir, self.images[idx])
         image = Image.open(image_path).convert('RGB')
+        params = get_params(self.opt, image.size)
         transform_image = get_transform(self.opt, params)
         image_tensor = transform_image(image)
 
 
-        # Label(s) (mask(s) of the image(s))
+        # Read, load and transforms labels/masks
         label_path = os.path.join(self.masks_dir, self.masks[idx])
         label = Image.open(label_path)
         params = get_params(self.opt, label.size)
@@ -899,7 +899,6 @@ class CelebaDB(Pix2pixDataset):
         label_tensor = transform_label(label) * 255.0
         label_tensor[label_tensor == 255] = self.opt.label_nc  # 'unknown' is opt.label_nc
 
-        
 
         # if using instance maps
         if self.opt.no_instance:
@@ -1063,6 +1062,7 @@ class CelebaMaskHQDB(Pix2pixDataset):
         # Read, load and transform images
         image_path = os.path.join(self.images_dir, self.images[idx])
         image = Image.open(image_path).convert('RGB')
+        params = get_params(self.opt, image.size)
         transform_image = get_transform(self.opt, params)
         image_tensor = transform_image(image)
 
