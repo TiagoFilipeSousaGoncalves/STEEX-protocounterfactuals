@@ -999,7 +999,7 @@ class CelebaMaskHQDB(Pix2pixDataset):
         return parser
 
 
-    # Method: 
+    # Method: Get data paths
     def get_paths(self):
 
         # Load CelebaMaskHQ to CelebA mapping
@@ -1035,6 +1035,7 @@ class CelebaMaskHQDB(Pix2pixDataset):
         return images, masks
     
 
+    # Method: Initialise dataset
     def initialize(self, opt, subset):
 
         assert subset in ('train', 'val', 'test')
@@ -1051,7 +1052,7 @@ class CelebaMaskHQDB(Pix2pixDataset):
 
 
         # Get data
-        self.images, self.masks = self.get_paths(subset=subset)
+        self.images, self.masks = self.get_paths()
 
         return
 
@@ -1098,7 +1099,7 @@ class CelebaMaskHQDB(Pix2pixDataset):
         return input_dict
 
 
-    # Method: Postprocessing function
+    # Method: Post-processing function
     def postprocess(self, input_dict):
         return input_dict
 
