@@ -153,7 +153,7 @@ criterion = nn.CrossEntropyLoss(ignore_index=0)
 checkpoints_dir = os.path.join(opt.results_dir, 'checkpoints', opt.segmentation_network_name)
 if not os.path.exists(checkpoints_dir):
     os.makedirs(checkpoints_dir)
-print(f"Saving checkpoints at: {checkpoints_dir}")
+# print(f"Saving checkpoints at: {checkpoints_dir}")
 
 
 # Save training parameters
