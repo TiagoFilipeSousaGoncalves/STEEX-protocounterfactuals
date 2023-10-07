@@ -10,7 +10,7 @@ import torch
 from torchvision import transforms
 
 # Project Imports
-import data_utilities_sean as data
+from data_utilities_sean import BDDOIADB, CelebaDB, CelebaMaskHQDB
 from option_utilities_sean import Options
 from models_sean.pix2pix_model import Pix2PixModel
 from model_utilities import DecisionDensenetModel
@@ -22,32 +22,153 @@ opt = Options().parse()
 
 
 
-# Specify some regions for the region-targeted regime
-if opt.dataset_name in ["celeba", "celebamhq"]:
-    z_i_meaning = ["background", "skin", "nose", "glasses", "left_eye",
-            "right_eye", "left_brow", "right_brow", "left_ear",
-            "right_ear", "mouth", "upper_lip", "lower_lip", "hair",
-            "hat", "earring", "necklace", "neck", "cloth", "nothing"]
-    if opt.dataset_name == "celeba":
-        SIZE = (128, 128)
-    else:
-        SIZE = (256, 256)
-elif opt.dataset_name == "bdd":
-    z_i_meaning = ['road', 'sidewalk', 'building', 'wall', 'fence',
-            'pole', 'traffic_light', 'traffic_sign', 'vegetation',
-            'terrain', 'sky', 'person', 'rider', 'car', 'truck', 'bus',
-            'train', 'motorcycle', 'bicycle', 'unlabeled']
+# Assert specific options for each type of database
+if opt.dataset_name == "BDDOIADB":
+
+    assert opt.data_dir is not None
+    assert opt.metadata_dir is not None
+    assert opt.masks_dir is not None
+    assert opt.load_size == 256
+    assert opt.crop_size == 256
+    assert opt.label_nc == 19
+    assert opt.contain_dontcare_label == True
+    assert opt.semantic_nc == 20
+    assert opt.cache_filelist_read == False
+    assert opt.cache_filelist_write == False
+    assert opt.aspect_ratio == 1.0
+    assert opt.augment == True
+    assert opt.decision_model_name == 'decision_model_bddoia'
+    assert opt.split == 'validation'
+    assert opt.use_ground_truth_masks == False
+
+
+    # Z-Semantic Space Meaning
+    z_i_meaning = [
+        'road',
+        'sidewalk',
+        'building',
+        'wall',
+        'fence',
+        'pole',
+        'traffic_light',
+        'traffic_sign',
+        'vegetation',
+        'terrain',
+        'sky',
+        'person',
+        'rider',
+        'car',
+        'truck',
+        'bus',
+        'train',
+        'motorcycle',
+        'bicycle',
+        'unlabeled'
+    ]
+    
     SIZE = (256, 512)
-else:
-    raise NotImplementedError
+
+    dataset = BDDOIADB()
+    dataset.initialize(opt=opt, subset='train')
+
+
+elif opt.dataset_name in ["CelebaDB", "CelebaMaskHQDB"]:
+
+    # Z-Semantic Space Meaning
+    z_i_meaning = [
+        "background",
+        "skin",
+        "nose",
+        "glasses",
+        "left_eye",
+        "right_eye",
+        "left_brow",
+        "right_brow",
+        "left_ear",
+        "right_ear",
+        "mouth",
+        "upper_lip",
+        "lower_lip",
+        "hair",
+        "hat",
+        "earring",
+        "necklace",
+        "neck",
+        "cloth",
+        "nothing"
+    ]
+
+    if opt.dataset_name == "CelebaDB":
+
+        assert opt.images_dir is not None
+        assert opt.images_subdir is not None
+        assert opt.masks_dir is not None
+        assert opt.eval_dir is not None
+        assert opt.anno_dir is not None
+        assert opt.load_size == 128
+        assert opt.crop_size == 128
+        assert opt.label_nc == 18
+        assert opt.contain_dontcare_label == True
+        assert opt.semantic_nc == 19
+        assert opt.cache_filelist_read == False
+        assert opt.cache_filelist_write == False
+        assert opt.aspect_ratio == 1.0
+        assert opt.augment == True
+        assert opt.decision_model_name == 'decision_model_celeba'
+        assert opt.preprocess_mode == "scale_width_and_crop"
+        assert opt.decision_model_nb_classes == 3
+        assert opt.target_attribute == 1
+        assert opt.split == "validation"
+        assert opt.use_ground_truth_masks == False
+        
+        SIZE = (128, 128)
+
+        dataset = CelebaDB()
+        dataset.initialize(opt=opt, subset='train')
+    
+    else:
+
+        assert opt.images_dir is not None
+        assert opt.masks_dir is not None
+        assert opt.eval_dir is not None
+        assert opt.anno_dir is not None
+        assert opt.load_size == 256
+        assert opt.crop_size == 256
+        assert opt.label_nc == 18
+        assert opt.contain_dontcare_label == True
+        assert opt.semantic_nc == 19
+        assert opt.cache_filelist_read == False
+        assert opt.cache_filelist_write == False
+        assert opt.aspect_ratio == 1.0
+        assert opt.augment == True
+        assert opt.decision_model_name == 'decision_model_celebamaskhq'
+        assert opt.preprocess_mode == "scale_width_and_crop"
+        assert opt.decision_model_nb_classes == 3
+        assert opt.target_attribute == 1
+        assert opt.split == "test"
+        assert opt.use_ground_truth_masks == False
+
+        SIZE = (256, 256)
+
+        dataset = CelebaMaskHQDB()
+        dataset.initialize(opt=opt, subset='train')
 
 
 
+# Select the device
+DEVICE = "cuda:0" if torch.cuda.is_available() else "cpu"
+
+
+# Map the Z-meaning to a indices
 meaning_to_index = {meaning: i for i, meaning in enumerate(z_i_meaning)}
-# Transfor the list of labels to be optimized to a set of indices
+
+
+# Transform the list of labels to be optimized to a set of indices
 if len(opt.specified_regions) > 0:
     opt.specified_regions = set(meaning_to_index[label] for label in opt.specified_regions.split(","))
 
+
+# TODO: Pick from this place
 # Create experiment directories
 if not os.path.exists(opt.results_dir):
     os.mkdir(opt.results_dir)
@@ -74,8 +195,9 @@ with open(config_path, "wb") as f:
 
 
 
-# Select the device
-device = "cuda:0" if torch.cuda.is_available() else "cpu"
+
+
+
 
 # Load decision model
 decision_model = DecisionDensenetModel(num_classes=opt.decision_model_nb_classes, pretrained=True)
@@ -83,17 +205,29 @@ checkpoint = torch.load(os.path.join(opt.checkpoints_dir, "decision_densenet", o
 decision_model.load_state_dict(checkpoint['model_state_dict'])
 start_epoch = checkpoint['epoch']
 print("Decision model correctly loaded. Starting from epoch", start_epoch, "with last val loss", checkpoint["loss"])
-decision_model.to(device)
+decision_model.to(DEVICE)
 decision_model.eval()
 
 # TODO/FIXME: Shouldn't we load the weights?
 # Load generator G
 generator = Pix2PixModel(opt)
-generator.eval().cuda()
+generator.to(DEVICE)
+generator.eval()
 
-## Data
-dataloader = data.create_dataloader(opt)
+
+
+# Data
+dataloader = torch.utils.data.DataLoader(
+    dataset,
+    batch_size=opt.batchSize,
+    shuffle=False,
+    num_workers=int(opt.nThreads),
+    drop_last=False,
+    pin_memory=True
+)
 iterable_data = iter(dataloader)
+
+
 
 # Iterate over images
 for img in range(min(len(dataloader), opt.how_many)):

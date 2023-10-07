@@ -89,8 +89,17 @@ class BaseOptions():
         parser.add_argument('--nef', type=int, default=16, help='# of encoder filters in the first conv layer')
         parser.add_argument('--use_vae', action='store_true', help='enable training with an image encoder.')
 
+        # For counterfactual generation
+        parser.add_argument('--decision_model_name', type=str, choices=['decision_model_bddoia', 'decision_model_celeba', 'decision_model_celebamaskhq'], help="The decision model trained for the counterfactual generation pipeline.")
+        parser.add_argument('--decision_model_nb_classes', type=int, choices=[3], help="The number of classes for the decision model during counterfactual generation.")
+        parser.add_argument('--target_attribute', type=int, choices=[1, 2], help="The target attribute for CelebaDB/CelebaMaskHQDB databases (1 for smile, 2 for young)")
+        parser.add_argument('--split', type=str, choices=['train', 'validation', 'test'], help="The data split to use during counterfactual generation.")
+        parser.add_argument('--use_ground_truth_masks', action='store_true', help="Use ground-truth masks to identify the morphing location.")
+
         self.initialized = True
+
         return parser
+
 
     def gather_options(self):
         # initialize parser with basic options
@@ -270,64 +279,70 @@ class TestOptions(BaseOptions):
 
 
 
+# TODO: Erase uppon review since it is basically Options
 # Class: CelebAOptions
 class CelebAOptions(BaseOptions):
     def initialize(self, parser):
         BaseOptions.initialize(self, parser)
 
-        parser.set_defaults(name="celeba")
-        parser.set_defaults(decision_model_ckpt="celeba")
+        # parser.set_defaults(name="celeba")
+        # parser.set_defaults(decision_model_ckpt="celeba")
 
-        parser.set_defaults(split="val")
-        parser.set_defaults(use_ground_truth_masks=False)
+        # parser.set_defaults(split="val")
+        # parser.set_defaults(use_ground_truth_masks=False)
 
-        parser.set_defaults(semantic_nc=19)
-        parser.set_defaults(preprocess_mode="scale_width_and_crop")
-        parser.set_defaults(load_size=128)
-        parser.set_defaults(crop_size=128)
-        parser.set_defaults(aspect_ratio=1.0)
-        parser.set_defaults(decision_model_nb_classes=3)
-        parser.set_defaults(target_attribute=1) # 1 for smile, 2 for young
+        # TODO: Erase uppon review
+        # parser.set_defaults(semantic_nc=19)
+        # parser.set_defaults(preprocess_mode="scale_width_and_crop")
+        # parser.set_defaults(load_size=128)
+        # parser.set_defaults(crop_size=128)
+        # parser.set_defaults(aspect_ratio=1.0)
+        # parser.set_defaults(decision_model_nb_classes=3)
+        # parser.set_defaults(target_attribute=1) # 1 for smile, 2 for young
 
         return parser
 
 
 
+# TODO: Erase uppon review since it is basically Options
 # Class: CelebAMHQOptions
 class CelebAMHQOptions(BaseOptions):
     def initialize(self, parser):
         BaseOptions.initialize(self, parser)
 
-        parser.set_defaults(name="celebamaskhq")
-        parser.set_defaults(decision_model_ckpt="celebamaskhq")
+        # parser.set_defaults(name="celebamaskhq")
+        # parser.set_defaults(decision_model_ckpt="celebamaskhq")
 
-        parser.set_defaults(split="test")
-        parser.set_defaults(use_ground_truth_masks=False)
+        # parser.set_defaults(split="test")
+        # parser.set_defaults(use_ground_truth_masks=False)
 
-        parser.set_defaults(semantic_nc=19)
-        parser.set_defaults(preprocess_mode="scale_width_and_crop")
-        parser.set_defaults(load_size=256)
-        parser.set_defaults(crop_size=256)
-        parser.set_defaults(aspect_ratio=1.0)
-        parser.set_defaults(decision_model_nb_classes=3)
-        parser.set_defaults(target_attribute=1) # 1 for smile, 2 for young
+        # TODO: Erase uppon review
+        # parser.set_defaults(semantic_nc=19)
+        # parser.set_defaults(preprocess_mode="scale_width_and_crop")
+        # parser.set_defaults(load_size=256)
+        # parser.set_defaults(crop_size=256)
+        # parser.set_defaults(aspect_ratio=1.0)
+        # parser.set_defaults(decision_model_nb_classes=3)
+        # parser.set_defaults(target_attribute=1) # 1 for smile, 2 for young
 
         return parser
 
 
 
+# TODO: Erase uppon review since it is basically Options
 # Class: BDDOptions
 class BDDOptions(BaseOptions):
     def initialize(self, parser):
         BaseOptions.initialize(self, parser)
 
-        parser.set_defaults(name="bdd")
-        parser.set_defaults(decision_model_ckpt="bdd")
+        # TODO: Erase uppon review
+        # parser.set_defaults(name="bdd")
+        # parser.set_defaults(decision_model_ckpt="bdd")
 
-        parser.set_defaults(split="val")
-        parser.set_defaults(use_ground_truth_masks=False)
+        # parser.set_defaults(split="val")
+        # parser.set_defaults(use_ground_truth_masks=False)
 
-        parser.set_defaults(contain_dontcare_label=True)
+        # parser.set_defaults(contain_dontcare_label=True)
 
         return parser
 
@@ -343,34 +358,40 @@ class Options(BaseOptions):
 
         opt = BaseOptions().parse()
 
-        # Specific parser for the specified dataset
-        if opt.dataset_name == "celeba":
-            parser = CelebAOptions()
-        elif opt.dataset_name == "celebamhq":
-            parser = CelebAMHQOptions()
-        elif opt.dataset_name == "bdd":
-            parser = BDDOptions()
-        else:
-            raise NotImplementedError
+        assert opt.dataset_name in ('BDDOIADB', 'CelebaDB', 'CelebaMaskHQDB')
 
+        # Specific parser for the specified dataset
+        if opt.dataset_name == "BDDOIADB":
+            parser = BDDOptions()
+        elif opt.dataset_name == "CelebaDB":
+            parser = CelebAOptions()
+        elif opt.dataset_name == "CelebaMaskHQDB":
+            parser = CelebAMHQOptions()
+        
+
+
+        # Parse the the dataset-specific options
         opt = parser.parse()
 
         # Update paths
-        if opt.dataset_name == "celeba":
+        if opt.dataset_name == "BDDOIADB":
+            mask_dir = "labels" if opt.use_ground_truth_masks else "predicted_masks"
+            opt.image_dir = os.path.join(opt.dataroot, "BDD", "bdd100k", "seg", "images", opt.split)
+            opt.label_dir = os.path.join(opt.dataroot, "BDD", "bdd100k", "seg", mask_dir, opt.split)
+        
+        elif opt.dataset_name == "CelebaDB":
             if opt.use_ground_truth_masks:
                 print("No ground-truth masks for CelebA, please set --use_groun_truth_masks to False")
                 assert False
             opt.image_dir = os.path.join(opt.dataroot, "celeba_squared_128", "img_squared128_celeba_%s" % split)
             opt.label_dir = os.path.join(opt.dataroot, "celeba_squared_128", "seg_squared128_celeba_%s" % split)
-        elif opt.dataset_name == "celebamhq":
+        
+        elif opt.dataset_name == "CelebaMaskHQDB":
             mask_dir = "labels" if opt.use_ground_truth_masks else "predicted_masks"
             opt.image_dir = os.path.join(opt.dataroot, "CelebAMask-HQ", "CelebAMask-HQ", opt.split, "images")
             opt.label_dir = os.path.join(opt.dataroot, "CelebAMask-HQ", "CelebAMask-HQ", opt.split, mask_dir)
-        elif opt.dataset_name == "bdd":
-            mask_dir = "labels" if opt.use_ground_truth_masks else "predicted_masks"
-            opt.image_dir = os.path.join(opt.dataroot, "BDD", "bdd100k", "seg", "images", opt.split)
-            opt.label_dir = os.path.join(opt.dataroot, "BDD", "bdd100k", "seg", mask_dir, opt.split)
-        else:
-            raise NotImplementedError
+        
+        
+
 
         return opt
