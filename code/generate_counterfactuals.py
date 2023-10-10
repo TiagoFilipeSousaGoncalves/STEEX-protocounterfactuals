@@ -36,10 +36,11 @@ if opt.dataset_name == "BDDOIADB":
     assert opt.cache_filelist_read == False
     assert opt.cache_filelist_write == False
     assert opt.aspect_ratio == 1.0
-    assert opt.augment == True
+    assert opt.augment is not True
     assert opt.decision_model_name == 'decision_model_bddoia'
     assert opt.split == 'validation'
     assert opt.use_ground_truth_masks == False
+    assert opt.decision_model_nb_classes == 4
 
 
     # Z-Semantic Space Meaning
@@ -69,7 +70,7 @@ if opt.dataset_name == "BDDOIADB":
     SIZE = (256, 512)
 
     dataset = BDDOIADB()
-    dataset.initialize(opt=opt, subset='train')
+    dataset.initialize(opt=opt, subset=opt.split)
 
 
 elif opt.dataset_name in ["CelebaDB", "CelebaMaskHQDB"]:
@@ -124,7 +125,7 @@ elif opt.dataset_name in ["CelebaDB", "CelebaMaskHQDB"]:
         SIZE = (128, 128)
 
         dataset = CelebaDB()
-        dataset.initialize(opt=opt, subset='train')
+        dataset.initialize(opt=opt, subset=opt.split)
     
     else:
 
@@ -151,7 +152,7 @@ elif opt.dataset_name in ["CelebaDB", "CelebaMaskHQDB"]:
         SIZE = (256, 256)
 
         dataset = CelebaMaskHQDB()
-        dataset.initialize(opt=opt, subset='train')
+        dataset.initialize(opt=opt, subset=opt.split)
 
 
 
@@ -168,45 +169,42 @@ if len(opt.specified_regions) > 0:
     opt.specified_regions = set(meaning_to_index[label] for label in opt.specified_regions.split(","))
 
 
-# TODO: Pick from this place
-# Create experiment directories
-if not os.path.exists(opt.results_dir):
-    os.mkdir(opt.results_dir)
-LOG_DIR = os.path.join(opt.results_dir, opt.name_exp)
-opt.style_dir = os.path.join(LOG_DIR, "styles_test")
-if not os.path.exists(LOG_DIR):
-    os.mkdir(LOG_DIR)
-directories = {
-        "counterfactual_image_dir":  os.path.join(LOG_DIR, "final_images"),
-        "pkl_dir": os.path.join(LOG_DIR, "pkl_dir"),
-        }
-if opt.save_query_image:
-    directories["query_image_dir"] = os.path.join(LOG_DIR, "real_images")
-if opt.save_reconstruction:
-    directories["reconstructed_image_dir"] = os.path.join(LOG_DIR, "reconstructed_images")
 
+# Create experiment directories for results
+EXPERIMENT_RESULTS_DIR = os.path.join(opt.results_dir, opt.name_exp)
+EXPERIMENT_RESULTS_STYLE_DIR = os.path.join(EXPERIMENT_RESULTS_DIR, "styles_test")
+if not os.path.exists(EXPERIMENT_RESULTS_STYLE_DIR):
+    os.makedirs(EXPERIMENT_RESULTS_STYLE_DIR, exist_ok=True)
+
+# Create a dictionary dict and create these directories
+directories = {
+    "counterfactual_image_dir":  os.path.join(EXPERIMENT_RESULTS_DIR, "final_images"),
+    "pkl_dir": os.path.join(EXPERIMENT_RESULTS_DIR, "pkl_dir"),
+    "query_image_dir":os.path.join(EXPERIMENT_RESULTS_DIR, "real_images"),
+    "reconstructed_image_dir":os.path.join(EXPERIMENT_RESULTS_DIR, "reconstructed_images")
+}
 for dir_name, dir_path in directories.items():
     if not os.path.exists(dir_path):
-        os.mkdir(dir_path)
+        os.makedirs(dir_path, exist_ok=True)
+
+
 # Save configuration file
-config_path = os.path.join(LOG_DIR, "config.pkl")
+config_path = os.path.join(EXPERIMENT_RESULTS_DIR, "config.pkl")
 with open(config_path, "wb") as f:
     pickle.dump(opt, f)
 
 
 
-
-
-
-
 # Load decision model
-decision_model = DecisionDensenetModel(num_classes=opt.decision_model_nb_classes, pretrained=True)
-checkpoint = torch.load(os.path.join(opt.checkpoints_dir, "decision_densenet", opt.decision_model_ckpt, 'checkpoint.tar'))
+decision_model = DecisionDensenetModel(num_classes=opt.decision_model_nb_classes, pretrained=False)
+checkpoint = torch.load(os.path.join(opt.checkpoints_dir, opt.decision_model_name, 'checkpoint.pt'))
 decision_model.load_state_dict(checkpoint['model_state_dict'])
 start_epoch = checkpoint['epoch']
 print("Decision model correctly loaded. Starting from epoch", start_epoch, "with last val loss", checkpoint["loss"])
 decision_model.to(DEVICE)
 decision_model.eval()
+
+
 
 # TODO/FIXME: Shouldn't we load the weights?
 # Load generator G
@@ -235,7 +233,7 @@ for img in range(min(len(dataloader), opt.how_many)):
     data_i = next(iterable_data)
     data_i['store_path'] = [path + "_custom" for path in data_i["path"]]
 
-    initial_scores = decision_model(data_i['image'].cuda())
+    initial_scores = decision_model(data_i['image'].to(DEVICE))
     # target = 0 if initial_score > 0.5, else target = 1
     target = (initial_scores[:, opt.target_attribute] < 0.5).double()
 
@@ -249,11 +247,11 @@ for img in range(min(len(dataloader), opt.how_many)):
         img_path = os.path.split(image_path)[1]
         # loop over codes
         for i in range(20):
-            style_path = os.path.join(opt.style_dir, 'style_codes', img_path, str(i), 'ACE.npy')
+            style_path = os.path.join(EXPERIMENT_RESULTS_STYLE_DIR, 'style_codes', img_path, str(i), 'ACE.npy')
             if os.path.exists(style_path):
                 code = np.load(style_path)
                 style_codes_numpy[j, i] += code
-    style_codes = torch.Tensor(style_codes_numpy).to('cuda')
+    style_codes = torch.Tensor(style_codes_numpy).to(DEVICE)
 
     # General setting: optimize on everything
     if len(opt.specified_regions) == 0:
@@ -330,9 +328,9 @@ for img in range(min(len(dataloader), opt.how_many)):
 
         # Delete the saved style codes
         if opt.remove_saved_style_codes:
-            style_codes = os.path.join(opt.style_dir, 'style_codes', img_path)
+            style_codes = os.path.join(EXPERIMENT_RESULTS_STYLE_DIR, 'style_codes', img_path)
             shutil.rmtree(style_codes)
-            style_codes = os.path.join(opt.style_dir, 'style_codes', img_path+"_custom")
+            style_codes = os.path.join(EXPERIMENT_RESULTS_STYLE_DIR, 'style_codes', img_path+"_custom")
             shutil.rmtree(style_codes)
 
         # Save query image

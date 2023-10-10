@@ -29,8 +29,7 @@ class BaseOptions():
     def initialize(self, parser):
         
         # Experiment specifics
-        parser.add_argument('--name', type=str, required=True, help='name of the experiment. It decides where to store samples and models')
-
+        parser.add_argument('--name', type=str, required=True, help='The name of this experiment: it decides where to store samples and models.')
         parser.add_argument('--gpu_ids', type=str, default='0', help='gpu ids: e.g. 0  0,1,2, 0,2. use -1 for CPU')
         parser.add_argument('--checkpoints_dir', type=str, default='./checkpoints', help='models are saved here')
         parser.add_argument('--model', type=str, default='pix2pix', help='which model to use')
@@ -262,9 +261,9 @@ class TrainOptions(BaseOptions):
 class TestOptions(BaseOptions):
     def initialize(self, parser):
         BaseOptions.initialize(self, parser)
-        parser.add_argument('--results_dir', type=str, default='./results/', help='saves results here.')
+        parser.add_argument('--results_dir', type=str, required=True, help='Directory for results.')
         parser.add_argument('--which_epoch', type=str, default='latest', help='which epoch to load? set to latest to use latest cached model')
-        parser.add_argument('--how_many', type=int, default=float("inf"), help='how many test images to run')
+        parser.add_argument('--how_many', type=int, default=float("inf"), help='How many counterfactuals we want to generate.')
 
         parser.set_defaults(preprocess_mode='scale_width_and_crop', crop_size=256, load_size=256, display_winsize=256)
         parser.set_defaults(serial_batches=True)
