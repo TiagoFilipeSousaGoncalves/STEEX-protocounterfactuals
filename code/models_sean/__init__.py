@@ -3,10 +3,17 @@ Copyright (C) 2019 NVIDIA Corporation.  All rights reserved.
 Licensed under the CC BY-NC-SA 4.0 license (https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode).
 """
 
+
+
+# Imports
 import importlib
+
+# PyTorch Imports
 import torch
 
 
+
+# Function: Find model using name
 def find_model_using_name(model_name):
     # Given the option --model [modelname],
     # the file "models/modelname_model.py"
