@@ -11,14 +11,14 @@ from torchvision import transforms
 
 # Project Imports
 from data_utilities_sean import BDDOIADB, CelebaDB, CelebaMaskHQDB
-from option_utilities_sean import Options
+from option_utilities_sean import TestOptions
 from models_sean.pix2pix_model import Pix2PixModel
 from model_utilities import DecisionDensenetModel
 
 
 
 # Build CLI
-opt = Options().parse()
+opt = TestOptions().parse()
 
 
 
