@@ -92,7 +92,7 @@ class BaseOptions():
         parser.add_argument('--decision_model_name', type=str, choices=['decision_model_bddoia', 'decision_model_celeba', 'decision_model_celebamaskhq'], help="The decision model trained for the counterfactual generation pipeline.")
         parser.add_argument('--decision_model_nb_classes', type=int, choices=[3, 4], help="The number of classes for the decision model during counterfactual generation.")
         parser.add_argument('--target_attribute', type=int, choices=[0, 1, 2, 3], help="The target attribute for CelebaDB/CelebaMaskHQDB databases (1 for smile, 2 for young)")
-        parser.add_argument('--split', type=str, choices=['train', 'validation', 'test'], help="The data split to use during counterfactual generation.")
+        parser.add_argument('--split', type=str, choices=['train', 'val', 'test'], help="The data split to use during counterfactual generation.")
         parser.add_argument('--use_ground_truth_masks', action='store_true', help="Use ground-truth masks to identify the morphing location.")
 
         self.initialized = True
