@@ -74,6 +74,16 @@ class Pix2PixModel(torch.nn.Module):
                 #     obj_dic = [obj_dic]
                 fake_image = self.use_style_codes(input_semantics, real_image, obj_dic)
             return fake_image
+       
+        elif mode == 'inference_with_custom_z':
+            
+            obj_dic = data['store_path']
+            z = data['custom_z']
+            fake_image = self.netG.forward_with_custom_z(input_semantics, real_image, z, obj_dic)
+
+            return fake_image
+
+
         else:
             raise ValueError("|mode| is invalid")
 

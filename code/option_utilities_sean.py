@@ -97,6 +97,10 @@ class BaseOptions():
         parser.add_argument('--specified_regions', type=str, default="", help="List of regions to be targeted, separated by ','. Leave empty (default) to optimize over the whole image (general setting).")
         parser.add_argument('--counterfactual_generation_lr', type=float, default=0.01, help="Learning rate during counterfactual generation.")
         parser.add_argument('--nb_steps', type=int, default=100, help="Optimization steps for counterfactual generation.")
+        parser.add_argument('--remove_saved_style_codes', action="store_true", help="Removed saved style codes.")
+        parser.add_argument('--save_query_image', action="store_true", help="Save query image.")
+        parser.add_argument('--save_reconstruction', action="store_true", help="Save reconstruction of the image.")
+        parser.add_argument('--save_initial_final_z', action="store_true", help="Save initial and final Z-vector.")
 
         self.initialized = True
 

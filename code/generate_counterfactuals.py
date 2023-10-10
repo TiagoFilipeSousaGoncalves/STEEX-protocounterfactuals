@@ -351,12 +351,12 @@ for img in range(min(len(dataloader), opt.how_many)):
         # Save extra stuff
         successful = np.abs(final_scores[j, opt.target_attribute] - target[j].detach().cpu().float().numpy()) < 0.5
         dump_dict = {
-                  "successful": successful,
-                  "initial_scores": initial_scores[j].detach().cpu().float().numpy(),
-                  "final_scores": final_scores[j],
-                  "loss_decision": final_loss_decision[j],
-                  "loss_proxmity": final_loss_proximity[j],
-                  }
+            "successful": successful,
+            "initial_scores": initial_scores[j].detach().cpu().float().numpy(),
+            "final_scores": final_scores[j],
+            "loss_decision": final_loss_decision[j],
+            "loss_proxmity": final_loss_proximity[j],
+        }
 
         if opt.save_initial_final_z:
             dump_dict["initial_z"] = style_codes_numpy[j]
