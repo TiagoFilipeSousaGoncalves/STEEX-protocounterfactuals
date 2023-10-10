@@ -206,7 +206,8 @@ decision_model.eval()
 
 
 
-# TODO/FIXME: Shouldn't we load the weights?
+# It reads the weights by default according to the experiment name (i.e., opt.name)
+# So, we need ot provide the name used during the training of SEAN autoencoder
 # Load generator G
 generator = Pix2PixModel(opt)
 generator.to(DEVICE)
