@@ -3,12 +3,19 @@ Copyright (C) 2019 NVIDIA Corporation.  All rights reserved.
 Licensed under the CC BY-NC-SA 4.0 license (https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode).
 """
 
-import torch.nn as nn
+
+
+# Imports
 import numpy as np
+
+# PyTorch Imports
+import torch.nn as nn
 import torch.nn.functional as F
-from models.networks.base_network import BaseNetwork
-from models.networks.normalization import get_nonspade_norm_layer
-import util.util as util
+
+# Project Imports
+from models_sean.networks.base_network import BaseNetwork
+from models_sean.networks.normalization import get_nonspade_norm_layer
+from misc_utilities_sean import find_class_in_module
 
 
 class MultiscaleDiscriminator(BaseNetwork):
@@ -21,7 +28,7 @@ class MultiscaleDiscriminator(BaseNetwork):
         opt, _ = parser.parse_known_args()
 
         # define properties of each discriminator of the multiscale discriminator
-        subnetD = util.find_class_in_module(opt.netD_subarch + 'discriminator',
+        subnetD = find_class_in_module(opt.netD_subarch + 'discriminator',
                                             'models.networks.discriminator')
         subnetD.modify_commandline_options(parser, is_train)
 
