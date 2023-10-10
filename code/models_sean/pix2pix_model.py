@@ -2,12 +2,19 @@
 Copyright (C) 2019 NVIDIA Corporation.  All rights reserved.
 Licensed under the CC BY-NC-SA 4.0 license (https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode).
 """
+
+
+
+# PyTorch Imports
 import torch
 
-import util.util as util
+# Project Imports
+from misc_utilities_sean import save_network, load_network
 import models_sean.networks as networks
 
 
+
+# Class: Pix2PixModel
 class Pix2PixModel(torch.nn.Module):
     @staticmethod
     def modify_commandline_options(parser, is_train):
@@ -100,8 +107,8 @@ class Pix2PixModel(torch.nn.Module):
         return optimizer_G, optimizer_D
 
     def save(self, epoch):
-        util.save_network(self.netG, 'G', epoch, self.opt)
-        util.save_network(self.netD, 'D', epoch, self.opt)
+        save_network(self.netG, 'G', epoch, self.opt)
+        save_network(self.netD, 'D', epoch, self.opt)
 
     ############################################################################
     # Private helper methods
@@ -113,9 +120,9 @@ class Pix2PixModel(torch.nn.Module):
         netE = networks.define_E(opt) if opt.use_vae else None
 
         if not opt.isTrain or opt.continue_train:
-            netG = util.load_network(netG, 'G', opt.which_epoch, opt)
+            netG = load_network(netG, 'G', opt.which_epoch, opt)
             if opt.isTrain:
-                netD = util.load_network(netD, 'D', opt.which_epoch, opt)
+                netD = load_network(netD, 'D', opt.which_epoch, opt)
 
         return netG, netD, netE
 
