@@ -2,19 +2,12 @@
 Copyright (C) 2019 NVIDIA Corporation.  All rights reserved.
 Licensed under the CC BY-NC-SA 4.0 license (https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode).
 """
-
-
-
-# PyTorch Imports
 import torch
 
-# Project Imports
-import misc_utilities_sean as util
+import util.util as util
 import models_sean.networks as networks
 
 
-
-# Class: Pix2PixModel
 class Pix2PixModel(torch.nn.Module):
     @staticmethod
     def modify_commandline_options(parser, is_train):
@@ -74,9 +67,9 @@ class Pix2PixModel(torch.nn.Module):
                 #     obj_dic = [obj_dic]
                 fake_image = self.use_style_codes(input_semantics, real_image, obj_dic)
             return fake_image
-       
+
         elif mode == 'inference_with_custom_z':
-            
+
             obj_dic = data['store_path']
             z = data['custom_z']
             fake_image = self.netG.forward_with_custom_z(input_semantics, real_image, z, obj_dic)
@@ -157,16 +150,15 @@ class Pix2PixModel(torch.nn.Module):
     def compute_generator_loss(self, input_semantics, real_image):
         G_losses = {}
 
-        fake_image = self.generate_fake(input_semantics, real_image, compute_kld_loss=self.opt.use_vae)
-        
-        # Sanity prints
-        # print(f"Shape of fake_image: {fake_image.shape}")
-        # print(f"Shape of input_semantics: {input_semantics.shape}")
-        # print(f"Shape of real_image: {real_image.shape}")
+        fake_image = self.generate_fake(
+            input_semantics, real_image, compute_kld_loss=self.opt.use_vae)
 
-        pred_fake, pred_real = self.discriminate(input_semantics, fake_image, real_image)
 
-        G_losses['GAN'] = self.criterionGAN(pred_fake, True, for_discriminator=False)
+        pred_fake, pred_real = self.discriminate(
+            input_semantics, fake_image, real_image)
+
+        G_losses['GAN'] = self.criterionGAN(pred_fake, True,
+                                            for_discriminator=False)
 
         if not self.opt.no_ganFeat_loss:
             num_D = len(pred_fake)

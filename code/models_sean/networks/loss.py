@@ -3,16 +3,10 @@ Copyright (C) 2019 NVIDIA Corporation.  All rights reserved.
 Licensed under the CC BY-NC-SA 4.0 license (https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode).
 """
 
-
-
-# PyTorch Imports
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
-# Project Imports
-from models_sean.networks.architecture import VGG19
-
+from models.networks.architecture import VGG19
 
 
 # Defines the GAN loss which uses either LSGAN or the regular GAN.

@@ -3,18 +3,12 @@ Copyright (C) 2019 NVIDIA Corporation.  All rights reserved.
 Licensed under the CC BY-NC-SA 4.0 license (https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode).
 """
 
-
-
-# PyTorch Imports
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import torch.nn.utils.spectral_norm as spectral_norm
 import torchvision
-
-# Project Imports
-from models_sean.networks.normalization import SPADE, ACE
-
+import torch.nn.utils.spectral_norm as spectral_norm
+from models.networks.normalization import SPADE, ACE
 
 
 # ResNet block that uses SPADE.
@@ -25,13 +19,15 @@ from models_sean.networks.normalization import SPADE, ACE
 # class-conditional GAN architecture using residual block.
 # The code was inspired from https://github.com/LMescheder/GAN_stability.
 class SPADEResnetBlock(nn.Module):
-    def __init__(self, fin, fout, opt, Block_Name=None, use_rgb=True):
+    def __init__(self, fin, fout, opt, Block_Name=None, use_rgb=True, dataset_name="celeba", style_dir="styles_test"):
         super().__init__()
 
         self.use_rgb = use_rgb
 
         self.Block_Name = Block_Name
         self.status = opt.status
+        self.dataset_name = dataset_name
+        self.style_dir = style_dir
 
         # Attributes
         self.learned_shortcut = (fin != fout)
@@ -58,16 +54,16 @@ class SPADEResnetBlock(nn.Module):
         normtype_list = ['spadeinstance3x3', 'spadesyncbatch3x3', 'spadebatch3x3']
         our_norm_type = 'spadesyncbatch3x3'
 
-        self.ace_0 = ACE(our_norm_type, fin, 3, ACE_Name= Block_Name + '_ACE_0', status=self.status, spade_params=[spade_config_str, fin, opt.semantic_nc], use_rgb=use_rgb)
+        self.ace_0 = ACE(our_norm_type, fin, 3, ACE_Name= Block_Name + '_ACE_0', status=self.status, spade_params=[spade_config_str, fin, opt.semantic_nc], use_rgb=use_rgb, dataset_name=dataset_name, style_dir=style_dir)
         ###########  Modifications 1
 
 
         ###########  Modifications 1
-        self.ace_1 = ACE(our_norm_type, fmiddle, 3, ACE_Name= Block_Name + '_ACE_1', status=self.status, spade_params=[spade_config_str, fmiddle, opt.semantic_nc], use_rgb=use_rgb)
+        self.ace_1 = ACE(our_norm_type, fmiddle, 3, ACE_Name= Block_Name + '_ACE_1', status=self.status, spade_params=[spade_config_str, fmiddle, opt.semantic_nc], use_rgb=use_rgb, dataset_name=dataset_name, style_dir=style_dir)
         ###########  Modifications 1
 
         if self.learned_shortcut:
-            self.ace_s = ACE(our_norm_type, fin, 3, ACE_Name= Block_Name + '_ACE_s', status=self.status, spade_params=[spade_config_str, fin, opt.semantic_nc], use_rgb=use_rgb)
+            self.ace_s = ACE(our_norm_type, fin, 3, ACE_Name= Block_Name + '_ACE_s', status=self.status, spade_params=[spade_config_str, fin, opt.semantic_nc], use_rgb=use_rgb, dataset_name=dataset_name, style_dir=style_dir)
 
     # note the resnet block with SPADE also takes in |seg|,
     # the semantic segmentation map as input

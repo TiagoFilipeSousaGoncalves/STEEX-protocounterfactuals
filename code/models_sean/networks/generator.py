@@ -3,19 +3,14 @@ Copyright (C) 2019 NVIDIA Corporation.  All rights reserved.
 Licensed under the CC BY-NC-SA 4.0 license (https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode).
 """
 
-
-
-# PyTorch Imports
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
-# Project Imports
-from models_sean.networks.base_network import BaseNetwork
-from models_sean.networks.normalization import get_nonspade_norm_layer
-from models_sean.networks.architecture import ResnetBlock as ResnetBlock
-from models_sean.networks.architecture import SPADEResnetBlock as SPADEResnetBlock
-from models_sean.networks.architecture import Zencoder
+from models.networks.base_network import BaseNetwork
+from models.networks.normalization import get_nonspade_norm_layer
+from models.networks.architecture import ResnetBlock as ResnetBlock
+from models.networks.architecture import SPADEResnetBlock as SPADEResnetBlock
+from models.networks.architecture import Zencoder
 
 class SPADEGenerator(BaseNetwork):
     @staticmethod
@@ -31,6 +26,8 @@ class SPADEGenerator(BaseNetwork):
         super().__init__()
         self.opt = opt
         nf = opt.ngf
+        dataset_name = opt.dataset_name
+        style_dir = opt.style_dir
 
         self.sw, self.sh = self.compute_latent_vector_size(opt)
 
@@ -39,20 +36,20 @@ class SPADEGenerator(BaseNetwork):
 
         self.fc = nn.Conv2d(self.opt.semantic_nc, 16 * nf, 3, padding=1)
 
-        self.head_0 = SPADEResnetBlock(16 * nf, 16 * nf, opt, Block_Name='head_0')
+        self.head_0 = SPADEResnetBlock(16 * nf, 16 * nf, opt, Block_Name='head_0', dataset_name=dataset_name, style_dir=style_dir)
 
-        self.G_middle_0 = SPADEResnetBlock(16 * nf, 16 * nf, opt, Block_Name='G_middle_0')
-        self.G_middle_1 = SPADEResnetBlock(16 * nf, 16 * nf, opt, Block_Name='G_middle_1')
+        self.G_middle_0 = SPADEResnetBlock(16 * nf, 16 * nf, opt, Block_Name='G_middle_0', dataset_name=dataset_name, style_dir=style_dir)
+        self.G_middle_1 = SPADEResnetBlock(16 * nf, 16 * nf, opt, Block_Name='G_middle_1', dataset_name=dataset_name, style_dir=style_dir)
 
-        self.up_0 = SPADEResnetBlock(16 * nf, 8 * nf, opt, Block_Name='up_0')
-        self.up_1 = SPADEResnetBlock(8 * nf, 4 * nf, opt, Block_Name='up_1')
-        self.up_2 = SPADEResnetBlock(4 * nf, 2 * nf, opt, Block_Name='up_2')
-        self.up_3 = SPADEResnetBlock(2 * nf, 1 * nf, opt, Block_Name='up_3', use_rgb=False)
+        self.up_0 = SPADEResnetBlock(16 * nf, 8 * nf, opt, Block_Name='up_0', dataset_name=dataset_name, style_dir=style_dir)
+        self.up_1 = SPADEResnetBlock(8 * nf, 4 * nf, opt, Block_Name='up_1', dataset_name=dataset_name, style_dir=style_dir)
+        self.up_2 = SPADEResnetBlock(4 * nf, 2 * nf, opt, Block_Name='up_2', dataset_name=dataset_name, style_dir=style_dir)
+        self.up_3 = SPADEResnetBlock(2 * nf, 1 * nf, opt, Block_Name='up_3', use_rgb=False, dataset_name=dataset_name, style_dir=style_dir)
 
         final_nc = nf
 
         if opt.num_upsampling_layers == 'most':
-            self.up_4 = SPADEResnetBlock(1 * nf, nf // 2, opt, Block_Name='up_4')
+            self.up_4 = SPADEResnetBlock(1 * nf, nf // 2, opt, Block_Name='up_4', dataset_name=dataset_name, style_dir=style_dir)
             final_nc = nf // 2
 
         self.conv_img = nn.Conv2d(final_nc, 3, 3, padding=1)
@@ -85,6 +82,42 @@ class SPADEGenerator(BaseNetwork):
 
         style_codes = self.Zencoder(input=rgb_img, segmap=seg)
 
+        x = self.head_0(x, seg, style_codes, obj_dic=obj_dic)
+
+        x = self.up(x)
+        x = self.G_middle_0(x, seg, style_codes, obj_dic=obj_dic)
+
+        if self.opt.num_upsampling_layers == 'more' or \
+           self.opt.num_upsampling_layers == 'most':
+            x = self.up(x)
+
+        x = self.G_middle_1(x, seg, style_codes,  obj_dic=obj_dic)
+
+        x = self.up(x)
+        x = self.up_0(x, seg, style_codes, obj_dic=obj_dic)
+        x = self.up(x)
+        x = self.up_1(x, seg, style_codes, obj_dic=obj_dic)
+        x = self.up(x)
+        x = self.up_2(x, seg, style_codes, obj_dic=obj_dic)
+        x = self.up(x)
+        x = self.up_3(x, seg, style_codes,  obj_dic=obj_dic)
+
+        # if self.opt.num_upsampling_layers == 'most':
+        #     x = self.up(x)
+        #     x= self.up_4(x, seg, style_codes,  obj_dic=obj_dic)
+
+        x = self.conv_img(F.leaky_relu(x, 2e-1))
+        x = F.tanh(x)
+        return x
+
+    def forward_with_custom_z(self, input, rgb_img, z, obj_dic=None):
+
+        seg = input
+
+        x = F.interpolate(seg, size=(self.sh, self.sw))
+        x = self.fc(x)
+
+        style_codes = z
 
         x = self.head_0(x, seg, style_codes, obj_dic=obj_dic)
 

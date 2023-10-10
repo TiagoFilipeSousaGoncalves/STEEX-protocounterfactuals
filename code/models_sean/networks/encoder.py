@@ -3,22 +3,13 @@ Copyright (C) 2019 NVIDIA Corporation.  All rights reserved.
 Licensed under the CC BY-NC-SA 4.0 license (https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode).
 """
 
-
-
-# Imports
-import numpy as np
-
-# PyTorch Imports
 import torch.nn as nn
+import numpy as np
 import torch.nn.functional as F
-
-# Project Imports
-from models_sean.networks.base_network import BaseNetwork
-from models_sean.networks.normalization import get_nonspade_norm_layer
+from models.networks.base_network import BaseNetwork
+from models.networks.normalization import get_nonspade_norm_layer
 
 
-
-# Class: ConvEncoder
 class ConvEncoder(BaseNetwork):
     """ Same architecture as the image discriminator """
 
@@ -38,12 +29,8 @@ class ConvEncoder(BaseNetwork):
             self.layer6 = norm_layer(nn.Conv2d(ndf * 8, ndf * 8, kw, stride=2, padding=pw))
 
         self.so = s0 = 4
-
-        # Fixed according to: https://github.com/NVlabs/SPADE/issues/139
-        # self.fc_mu = nn.Linear(ndf * 8 * s0 * s0, 256)
-        # self.fc_var = nn.Linear(ndf * 8 * s0 * s0, 256)
-        self.fc_mu = nn.Linear(ndf * 8 * s0 * s0, opt.z_dim)
-        self.fc_var = nn.Linear(ndf * 8 * s0 * s0, opt.z_dim)
+        self.fc_mu = nn.Linear(ndf * 8 * s0 * s0, 256)
+        self.fc_var = nn.Linear(ndf * 8 * s0 * s0, 256)
 
         self.actvn = nn.LeakyReLU(0.2, False)
         self.opt = opt
