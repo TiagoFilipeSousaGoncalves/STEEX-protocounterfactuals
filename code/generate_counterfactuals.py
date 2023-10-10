@@ -38,7 +38,7 @@ if opt.dataset_name == "BDDOIADB":
     assert opt.aspect_ratio == 1.0
     assert opt.augment is not True
     assert opt.decision_model_name == 'decision_model_bddoia'
-    assert opt.split == 'validation'
+    assert opt.split == 'val'
     assert opt.use_ground_truth_masks == False
     assert opt.decision_model_nb_classes == 4
 
