@@ -95,6 +95,7 @@ class BaseOptions():
         parser.add_argument('--split', type=str, choices=['train', 'val', 'test'], help="The data split to use during counterfactual generation.")
         parser.add_argument('--use_ground_truth_masks', action='store_true', help="Use ground-truth masks to identify the morphing location.")
         parser.add_argument('--specified_regions', type=str, default="", help="List of regions to be targeted, separated by ','. Leave empty (default) to optimize over the whole image (general setting).")
+        parser.add_argument('--counterfactual_generation_lr', type=float, default=0.01, help="Learning rate during counterfactual generation.")
 
         self.initialized = True
 

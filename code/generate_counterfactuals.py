@@ -257,7 +257,7 @@ for img in range(min(len(dataloader), opt.how_many)):
     # General setting: optimize on everything
     if len(opt.specified_regions) == 0:
         z = style_codes.detach().clone().requires_grad_(True)
-        optimizer = torch.optim.Adam([z], lr=opt.lr)
+        optimizer = torch.optim.Adam([z], lr=opt.counterfactual_generation_lr)
 
     # Region-targeted setting, optimize on the labels given
     else:
