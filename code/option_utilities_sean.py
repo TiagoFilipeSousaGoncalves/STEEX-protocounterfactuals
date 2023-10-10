@@ -101,7 +101,8 @@ class BaseOptions():
         parser.add_argument('--save_query_image', action="store_true", help="Save query image.")
         parser.add_argument('--save_reconstruction', action="store_true", help="Save reconstruction of the image.")
         parser.add_argument('--save_initial_final_z', action="store_true", help="Save initial and final Z-vector.")
-
+        parser.add_argument('--style_dir', type=str, help="Style directory for the Generator.")
+        
         self.initialized = True
 
         return parser

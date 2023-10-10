@@ -175,6 +175,7 @@ EXPERIMENT_RESULTS_DIR = os.path.join(opt.results_dir, opt.name)
 EXPERIMENT_RESULTS_STYLE_DIR = os.path.join(EXPERIMENT_RESULTS_DIR, "styles_test")
 if not os.path.exists(EXPERIMENT_RESULTS_STYLE_DIR):
     os.makedirs(EXPERIMENT_RESULTS_STYLE_DIR, exist_ok=True)
+opt.style_dir = EXPERIMENT_RESULTS_STYLE_DIR
 
 # Create a dictionary dict and create these directories
 directories = {
