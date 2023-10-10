@@ -11,7 +11,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 # Project Imports
-from models.networks.architecture import VGG19
+from models_sean.networks.architecture import VGG19
 
 
 
