@@ -171,7 +171,7 @@ if len(opt.specified_regions) > 0:
 
 
 # Create experiment directories for results
-EXPERIMENT_RESULTS_DIR = os.path.join(opt.results_dir, opt.name)
+EXPERIMENT_RESULTS_DIR = os.path.join(opt.results_dir, opt.name, opt.split)
 EXPERIMENT_RESULTS_STYLE_DIR = os.path.join(EXPERIMENT_RESULTS_DIR, "styles_test")
 if not os.path.exists(EXPERIMENT_RESULTS_STYLE_DIR):
     os.makedirs(EXPERIMENT_RESULTS_STYLE_DIR, exist_ok=True)
@@ -229,9 +229,9 @@ iterable_data = iter(dataloader)
 
 
 
-# Iterate over images
-for img in range(min(len(dataloader), opt.how_many)):
-    print("new batch", img, "over", opt.how_many, "batches")
+# Iterate over all the images of the dataloader
+for img in range(len(dataloader)):
+    print("new batch", img, "over", len(dataloader), "batches")
     data_i = next(iterable_data)
     data_i['store_path'] = [path + "_custom" for path in data_i["path"]]
 
@@ -365,4 +365,3 @@ for img in range(min(len(dataloader), opt.how_many)):
 
         with open(os.path.join(directories["pkl_dir"], img_path.replace(".jpg", ".pkl")), 'wb') as f:
           pickle.dump(dump_dict, f)
-

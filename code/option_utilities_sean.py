@@ -272,7 +272,7 @@ class TestOptions(BaseOptions):
         BaseOptions.initialize(self, parser)
         parser.add_argument('--results_dir', type=str, required=True, help='Directory for results.')
         parser.add_argument('--which_epoch', type=str, default='latest', help='which epoch to load? set to latest to use latest cached model')
-        parser.add_argument('--how_many', type=int, default=float("inf"), help='How many counterfactuals we want to generate.')
+        # parser.add_argument('--how_many', type=int, default=float("inf"), help='How many counterfactuals we want to generate.')
         parser.add_argument('--augment', action="store_true", default=False, help="Activate data augmentation pipeline.")
 
         parser.set_defaults(preprocess_mode='scale_width_and_crop', crop_size=256, load_size=256, display_winsize=256)
