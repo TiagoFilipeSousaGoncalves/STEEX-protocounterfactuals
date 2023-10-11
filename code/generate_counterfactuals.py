@@ -337,7 +337,7 @@ for img in range(len(dataloader)):
 
         # Save query image
         if opt.save_query_image:
-            query_image = Image.open(os.path.join(opt.image_dir, img_path)).convert('RGB')
+            query_image = Image.open(image_path).convert('RGB')
             query_image = transforms.functional.resize(query_image, SIZE, Image.BICUBIC) # Resize real image
             query_image.save(os.path.join(directories["query_image_dir"], img_path.replace(".jpg", ".png")))
 
