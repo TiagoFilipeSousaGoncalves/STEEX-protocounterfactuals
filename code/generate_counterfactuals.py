@@ -7,6 +7,7 @@ from PIL import Image
 
 # PyTorch Imports
 import torch
+from torch.utils.data import DataLoader
 from torchvision import transforms
 
 # Project Imports
@@ -210,16 +211,13 @@ decision_model.eval()
 # So, we need ot provide the name used during the training of SEAN autoencoder
 # Load generator G
 generator = Pix2PixModel(opt)
-print("Loaded generator")
 generator.to(DEVICE)
-print(f"Passed to device: {DEVICE}")
 generator.eval()
-print("Passed to evaluation mode.")
 
 
 
 # Data
-dataloader = torch.utils.data.DataLoader(
+dataloader = DataLoader(
     dataset,
     batch_size=opt.batchSize,
     shuffle=False,
