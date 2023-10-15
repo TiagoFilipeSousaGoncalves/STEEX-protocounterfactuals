@@ -210,8 +210,11 @@ decision_model.eval()
 # So, we need ot provide the name used during the training of SEAN autoencoder
 # Load generator G
 generator = Pix2PixModel(opt)
+print("Loaded generator")
 generator.to(DEVICE)
+print(f"Passed to device: {DEVICE}")
 generator.eval()
+print("Passed to evaluation mode.")
 
 
 
