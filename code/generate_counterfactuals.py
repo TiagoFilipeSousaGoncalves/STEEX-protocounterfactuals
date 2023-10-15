@@ -141,7 +141,6 @@ elif opt.dataset_name in ["CelebaDB", "CelebaMaskHQDB"]:
         assert opt.cache_filelist_read == False
         assert opt.cache_filelist_write == False
         assert opt.aspect_ratio == 1.0
-        assert opt.augment == True
         assert opt.decision_model_name == 'decision_model_celebamaskhq'
         assert opt.preprocess_mode == "scale_width_and_crop"
         assert opt.decision_model_nb_classes == 3
