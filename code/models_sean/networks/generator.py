@@ -12,7 +12,6 @@ import torch.nn.functional as F
 
 # Project Imports
 from models_sean.networks.base_network import BaseNetwork
-from models_sean.networks.normalization import get_nonspade_norm_layer
 from models_sean.networks.architecture import ResnetBlock as ResnetBlock
 from models_sean.networks.architecture import SPADEResnetBlock as SPADEResnetBlock
 from models_sean.networks.architecture import Zencoder
