@@ -143,10 +143,10 @@ elif opt.dataset_name in ["CelebaDB", "CelebaMaskHQDB"]:
         assert opt.cache_filelist_write == False
         assert opt.aspect_ratio == 1.0
         assert opt.decision_model_name == 'decision_model_celebamaskhq'
-        assert opt.preprocess_mode == "scale_width_and_crop"
+        assert opt.preprocess_mode == "resize_and_crop"
         assert opt.decision_model_nb_classes == 3
         assert opt.target_attribute == 1
-        assert opt.split == "test"
+        assert opt.split == "val"
         assert opt.use_ground_truth_masks == False
 
         SIZE = (256, 256)
@@ -226,7 +226,6 @@ dataloader = DataLoader(
     pin_memory=True
 )
 iterable_data = iter(dataloader)
-print(len(dataloader))
 
 
 
